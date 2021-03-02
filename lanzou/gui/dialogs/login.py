@@ -1,19 +1,40 @@
 import os
-from PyQt5.QtCore import Qt, pyqtSignal, QPropertyAnimation, QRect
+import re
+# import browser_cookie3
+# https://github.com/borisbabic/browser_cookie3/pull/70
+from lanzou import browser_cookie3_n as browser_cookie3
+from PyQt5.QtCore import Qt, pyqtSignal, QPropertyAnimation, QRect, QTimer
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QTextEdit, QPushButton, QFormLayout,
-                             QHBoxLayout, QVBoxLayout, QMessageBox, QFileDialog)
+                             QHBoxLayout, QVBoxLayout, QMessageBox, QFileDialog, QTabWidget, QWidget)
 
-from lanzou.gui.others import QDoublePushButton, MyLineEdit
+from lanzou.gui.others import QDoublePushButton, MyLineEdit, AutoResizingTextEdit
 from lanzou.gui.qss import dialog_qss_style, btn_style
-from lanzou.gui import USE_WEB_ENG
-from lanzou.debug import SRC_DIR
+from lanzou.debug import logger, SRC_DIR
+from lanzou import USE_WEB_ENG
 
-if USE_WEB_ENG:  # 是否使用 PyQtWebEngine 辅助登录
-    from lanzou.gui.login_assister import LoginWindow
+if USE_WEB_ENG:  # 此处不能移动到后面，会抛出异常
+    from lanzou.login_assister import LoginWindow
 
 
 is_windows = True if os.name == 'nt' else False
+
+
+def get_cookie_from_browser(site='https://pc.woozooo.com'):
+    """直接读取浏览器的 cookie 数据库，优先返回 Firefox cookie，最后为 Chrome
+    """
+    cookie = {}
+    domain = re.match(r".*://([^/]+)/?", site)
+    domain = domain.groups()[0]
+    domain = domain.split(".")
+    domain = ".".join(domain[-2:])
+    cookies = browser_cookie3.load(domain_name=domain)
+    for c in cookies:
+        if c.domain in site:
+            if c.name in ("ylogin", 'phpdisk_info'):
+                cookie[c.name] = c.value
+
+    return cookie
 
 
 class LoginDialog(QDialog):
@@ -60,6 +81,21 @@ class LoginDialog(QDialog):
         logo.setPixmap(QPixmap(SRC_DIR + "logo3.gif"))
         logo.setStyleSheet("background-color:rgb(0,153,255);")
         logo.setAlignment(Qt.AlignCenter)
+
+        self.tabs = QTabWidget()
+        self.auto_tab = QWidget()
+        self.hand_tab = QWidget()
+
+        # Add tabs
+        self.tabs.addTab(self.auto_tab,"自动获取Cookie")
+        self.tabs.addTab(self.hand_tab,"手动输入Cookie")
+        self.auto_get_cookie_ok = AutoResizingTextEdit("🔶点击👇自动获取浏览器登录信息👇")
+        self.auto_get_cookie_ok.setReadOnly(True)
+        self.auto_get_cookie_btn = QPushButton("自动读取浏览器登录信息")
+        auto_cookie_notice = '支持浏览器：Chrome, Chromium, Opera, Edge, Firefox'
+        self.auto_get_cookie_btn.setToolTip(auto_cookie_notice)
+        self.auto_get_cookie_btn.clicked.connect(self.call_auto_get_cookie)
+        self.auto_get_cookie_btn.setStyleSheet("QPushButton {min-width: 210px;max-width: 210px;}")
 
         self.name_lb = QLabel("&U 用户")
         self.name_lb.setAlignment(Qt.AlignCenter)
@@ -132,6 +168,7 @@ class LoginDialog(QDialog):
             self.user_btns[user].setStyleSheet("QPushButton {border:none;}")
             if user == self._config.name:
                 self.user_btns[user].setStyleSheet("QPushButton {background-color:rgb(0,153,2);}")
+                self.tabs.setCurrentIndex(1)
             self.user_btns[user].setToolTip(f"点击选中，双击切换至用户：{user}")
             self.user_btns[user].doubleClicked.connect(self.choose_user)
             self.user_btns[user].clicked.connect(self.delete_chose_user)
@@ -139,25 +176,37 @@ class LoginDialog(QDialog):
             self.user_num += 1
             user_box.addStretch(1)
 
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(logo)
         vbox = QVBoxLayout()
-        vbox.addWidget(logo)
         if self._config.name:
             vbox.addWidget(lb_line_1)
+            user_box.setAlignment(Qt.AlignCenter)
             vbox.addLayout(user_box)
             vbox.addWidget(lb_line_2)
             if self.user_num > 1:
                 self.del_user_btn = QPushButton("删除账户")
                 self.del_user_btn.setIcon(QIcon(SRC_DIR + "delete.ico"))
-                self.del_user_btn.setStyleSheet("QPushButton {max-width: 180px;}")
+                self.del_user_btn.setStyleSheet("QPushButton {min-width: 180px;max-width: 180px;}")
                 self.del_user_btn.clicked.connect(self.call_del_chose_user)
                 vbox.addWidget(self.del_user_btn)
             else:
                 self.del_user_btn = None
             vbox.addStretch(1)
+
         vbox.addLayout(self.form)
         vbox.addStretch(1)
         vbox.addLayout(hbox)
-        self.setLayout(vbox)
+        vbox.setAlignment(Qt.AlignCenter)
+
+        self.hand_tab.setLayout(vbox)
+        auto_cookie_vbox = QVBoxLayout()
+        auto_cookie_vbox.addWidget(self.auto_get_cookie_ok)
+        auto_cookie_vbox.addWidget(self.auto_get_cookie_btn)
+        auto_cookie_vbox.setAlignment(Qt.AlignCenter)
+        self.auto_tab.setLayout(auto_cookie_vbox)
+        self.layout.addWidget(self.tabs)
+        self.setLayout(self.layout)
         self.update_selection(self._config.name)
 
     def call_del_chose_user(self):
@@ -319,7 +368,27 @@ class LoginDialog(QDialog):
             message_box.exec()
 
     def get_cookie_by_web(self, cookie):
+        """使用辅助登录程序槽函数"""
         self._cookie = cookie
+        self._close_dialog()
+
+    def call_auto_get_cookie(self):
+        """自动读取浏览器cookie槽函数"""
+        try:
+            self._cookie = get_cookie_from_browser()
+        except Exception as e:
+            logger.error(f"Browser_cookie3 Error: {e}")
+            self.auto_get_cookie_ok.setPlainText(f"❌获取失败，错误信息\n{e}")
+        else:
+            if self._cookie:
+                self._user = self._pwd = ''
+                self.auto_get_cookie_ok.setPlainText("✅获取成功即将登录……")
+                QTimer.singleShot(2000, self._close_dialog)
+            else:
+                self.auto_get_cookie_ok.setPlainText("❌获取失败\n请提前使用支持的浏览器登录蓝奏云，读取前完全退出浏览器！\n支持的浏览器与顺序：\nchrome, chromium, opera, edge, firefox")
+
+    def _close_dialog(self):
+        """关闭对话框"""
         up_info = {"name": self._user, "pwd": self._pwd, "cookie": self._cookie}
         self._config.set_infos(up_info)
         self.clicked_ok.emit()

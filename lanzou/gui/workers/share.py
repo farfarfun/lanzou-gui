@@ -22,14 +22,15 @@ class GetSharedInfo(QThread):
         self.is_folder = ""
         self._mutex = QMutex()
         self._is_work = False
-        self._pat = r"(https?://(\w[-\w]*\.)?lanzou[six].com/[a-z]?[a-zA-Z0-9]+)[^a-zA-Z0-9]*([a-zA-Z0-9]+\w+)?"
+        self._pat = r"(https?://(\w[-\w]*\.)?lanzou[six].com/[a-z]?[-/a-zA-Z0-9]+)[^a-zA-Z0-9]*([a-zA-Z0-9]+\w+)?"
 
     def set_disk(self, disk):
         self._disk = disk
 
-    def set_values(self, text):
+    def set_values(self, text, pwd_input=""):
         '''获取分享链接信息'''
         text = text.strip()
+        pwd_input = pwd_input.strip()
         if not text:
             self.update.emit()
             return None
@@ -41,14 +42,16 @@ class GetSharedInfo(QThread):
             elif is_folder_url(share_url):  # 文件夹链接
                 is_folder = True
                 is_file = False
-                self.msg.emit("正在获取文件夹链接信息，可能需要几秒钟，请稍候……", 30000)
+                self.msg.emit("正在获取文件夹链接信息，可能需要几秒钟，请稍候……", 500000)
             else:
                 self.msg.emit(f"{share_url} 为非法链接！", 0)
                 self.update.emit()
                 return None
             self.clean.emit()  # 清理旧的显示信息
             self.share_url = share_url
-            if pwd:
+            if pwd_input:
+                self.pwd = pwd_input
+            elif pwd:
                 self.pwd = pwd
             else:  # 一个或两个汉字的提取码
                 pwd_ = text.split(' ')[-1].split('：')[-1].split(':')[-1]
@@ -92,13 +95,17 @@ class GetSharedInfo(QThread):
                 if self.is_file:  # 链接为文件
                     _infos = self._disk.get_share_info_by_url(self.share_url, self.pwd)
                     self.emit_msg(_infos)
+                    self.infos.emit(_infos)
                 elif self.is_folder:  # 链接为文件夹
                     _infos = self._disk.get_folder_info_by_url(self.share_url, self.pwd)
                     self.emit_msg(_infos)
-                self.infos.emit(_infos)
+                    self.infos.emit(_infos)
+                else:
+                    logger.error(f"GetShareInfo error: Not a file or folder!")
             except TimeoutError:
                 self.msg.emit("font color='red'>网络超时！请稍后重试</font>", 5000)
             except Exception as e:
+                self.msg.emit(f"font color='red'>未知错误：{e}</font>", 5000)
                 logger.error(f"GetShareInfo error: e={e}")
             self._is_work = False
             self.update.emit()

@@ -428,11 +428,11 @@ class LanZouCloud(object):
             return FileDetail(LanZouCloud.NETWORK_ERROR, pwd=pwd, url=share_url)
 
         first_page = remove_notes(first_page.text)  # 去除网页里的注释
-        if '文件取消' in first_page:
+        if '文件取消' in first_page or '文件不存在' in first_page:
             return FileDetail(LanZouCloud.FILE_CANCELLED, pwd=pwd, url=share_url)
 
         # 这里获取下载直链 304 重定向前的链接
-        if '输入密码' in first_page:  # 文件设置了提取码时
+        if 'id="pwdload"' in first_page or 'id="passwddiv"' in first_page:  # 文件设置了提取码时
             if len(pwd) == 0:
                 return FileDetail(LanZouCloud.LACK_PASSWORD, pwd=pwd, url=share_url)  # 没给提取码直接退出
             # data : 'action=downprocess&sign=AGZRbwEwU2IEDQU6BDRUaFc8DzxfMlRjCjTPlVkWzFSYFY7ATpWYw_c_c&p='+pwd,
@@ -1146,6 +1146,7 @@ class LanZouCloud(object):
         # 自动创建子文件夹
         task.path = task.path + os.sep + folder_detail.folder.name
         if not os.path.exists(task.path):
+            task.path = task.path.replace('*', '_')  # 替换特殊字符以符合路径规则
             os.makedirs(task.path)
 
         # 不是大文件分段数据,直接下载

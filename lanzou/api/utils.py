@@ -99,11 +99,13 @@ def time_format(time_str: str) -> str:
 def is_name_valid(filename: str) -> bool:
     """检查文件名是否允许上传"""
 
-    valid_suffix_list = ('ppt', 'xapk', 'ke', 'azw', 'cpk', 'gho', 'dwg', 'db', 'docx', 'deb', 'e', 'ttf', 'xls', 'bat',
-                         'crx', 'rpm', 'txf', 'pdf', 'apk', 'ipa', 'txt', 'mobi', 'osk', 'dmg', 'rp', 'osz', 'jar',
-                         'ttc', 'z', 'w3x', 'xlsx', 'cetrainer', 'ct', 'rar', 'mp3', 'pptx', 'mobileconfig', 'epub',
-                         'imazingapp', 'doc', 'iso', 'img', 'appimage', '7z', 'rplib', 'lolgezi', 'exe', 'azw3', 'zip',
-                         'conf', 'tar', 'dll', 'flac', 'xpa', 'lua')
+    valid_suffix_list = ('doc','docx','zip','rar','apk','ipa','txt','exe',
+    '7z','e','z','ct','ke','cetrainer','db','tar','pdf','w3x','epub','mobi',
+    'azw','azw3','osk','osz','xpa','cpk','lua','jar','dmg','ppt','pptx','xls',
+    'xlsx','mp3','ipa','iso','img','gho','ttf','ttc','txf','dwg','bat',
+    'imazingapp','dll','crx','xapk','conf','deb','rp','rpm','rplib','mobileconfig',
+    'appimage','lolgezi','flac','cad','hwt','accdb','ce','xmind','enc','bds',
+    'bdi','ssf','it','tar.gz')
 
     return filename.split('.')[-1] in valid_suffix_list
 

@@ -1,6 +1,6 @@
 from lanzou.api.core import LanZouCloud
 
-version = '2.5.8'
+version = '2.5.9'
 
 
 def why_error(code):

@@ -52,7 +52,7 @@ class LanZouCloud(object):
         self._cookies = None
         self._headers = {
             'User-Agent': USER_AGENT,
-            'Referer': 'https://pan.lanzous.com',
+            'Referer': self._mydisk_url,
             'Accept-Language': 'zh-CN,zh;q=0.9',  # 提取直连必需设置这个，否则拿不到数据
         }
         disable_warnings(InsecureRequestWarning)  # 全局禁用 SSL 警告
@@ -96,8 +96,8 @@ class LanZouCloud(object):
     def login(self, username, passwd) -> int:
         """登录蓝奏云控制台"""
         self._session.cookies.clear()
-        login_data = {"action": "login", "task": "login", "setSessionId": "", "setToken": "", "setSig": "",
-                      "setScene": "", "username": username, "password": passwd}
+        login_data = {"task": "3", "setSessionId": "", "setToken": "", "setSig": "",
+                      "setScene": "", "uid": username, "pwd": passwd}
         phone_header = {
             "User-Agent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/82.0.4051.0 Mobile Safari/537.36"}
         html = self._get(self._account_url)
@@ -108,10 +108,10 @@ class LanZouCloud(object):
             logger.error("formhash is None!")
             return LanZouCloud.FAILED
         login_data['formhash'] = formhash[0]
-        html = self._post(self._account_url, login_data, headers=phone_header)
+        html = self._post(self._mydisk_url, login_data, headers=phone_header)
         if not html:
             return LanZouCloud.NETWORK_ERROR
-        if '登录成功' in html.text:
+        if '成功' in html.json()['info']:
             self._cookies = html.cookies.get_dict()
             self._session.cookies.update(self._cookies)
             return LanZouCloud.SUCCESS

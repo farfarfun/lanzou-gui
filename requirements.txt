@@ -8,3 +8,4 @@ keyring
 lz4
 pycryptodome
 SecretStorage
+pyinstaller

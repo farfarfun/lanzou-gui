@@ -1,3 +1,4 @@
+<img width=0 height=0 src="https://profile-counter.glitch.me/Leon406/count.svg" alt="Leon406:: Visitor's Count" />
 <p align="center">
 <img src="https://pc.woozooo.com/img/logo2.gif" width="200">
 </p>
@@ -9,9 +10,9 @@
 <img src="https://img.shields.io/badge/support-Linux-yellow?logo=Linux">
 <img src="https://img.shields.io/badge/support-MacOS-green?logo=apple">
 <br />
-<img src="https://img.shields.io/github/v/release/rachpt/lanzou-gui.svg?logo=iCloud">
-<img src="https://img.shields.io/github/last-commit/rachpt/lanzou-gui.svg">
-<img src="https://img.shields.io/github/downloads/rachpt/lanzou-gui/total.svg">
+<img src="https://img.shields.io/github/v/release/Leon406/lanzou-gui.svg?logo=iCloud">
+<img src="https://img.shields.io/github/last-commit/Leon406/lanzou-gui.svg">
+<img src="https://img.shields.io/github/downloads/Leon406/lanzou-gui/total.svg">
 </p>
 
 - 本项目使用`PyQt5`实现图形界面，可以完成蓝奏云的大部分功能

@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 # 本文件用于打包 Windows 程序
+# pip install pyinstaller
 # pyinstaller --clean --noconfirm build_exe.spec
 
 block_cipher = None

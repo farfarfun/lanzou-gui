@@ -450,6 +450,7 @@ class LanZouCloud(object):
         :param share_url: 文件分享链接
         :param pwd: 文件提取码(如果有的话)
         """
+        prop_host =self._host_url.replace("lanzouw.com","lanzoui.com")
         if not is_file_url(share_url):  # 非文件链接返回错误
             return FileDetail(LanZouCloud.URL_INVALID, pwd=pwd, url=share_url)
 
@@ -479,7 +480,7 @@ class LanZouCloud(object):
             sign = re.search(r"sign=(\w+?)&", first_page)
             sign = sign.group(1) if sign else ""
             post_data = {'action': 'downprocess', 'sign': sign, 'p': pwd}
-            link_info = self._post(self._host_url + '/ajaxm.php', post_data)  # 保存了重定向前的链接信息和文件名
+            link_info = self._post(prop_host + '/ajaxm.php', post_data)  # 保存了重定向前的链接信息和文件名
             second_page = self._get(share_url)  # 再次请求文件分享页面，可以看见文件名，时间，大小等信息(第二页)
             if not link_info or not second_page.text:
                 return FileDetail(LanZouCloud.NETWORK_ERROR, pwd=pwd, url=share_url)
@@ -495,6 +496,7 @@ class LanZouCloud(object):
             f_desc = f_desc.group(1) if f_desc else ''
         else:  # 文件没有设置提取码时,文件信息都暴露在分享页面上
             para = re.search(r'<iframe.*?src="(.+?)"', first_page).group(1)  # 提取下载页面 URL 的参数
+            logger.debug("params",para)
             # 文件名位置变化很多
             f_name = re.search(r"<title>(.+?) - 蓝奏云</title>", first_page) or \
                      re.search(r'<div class="filethetext".+?>([^<>]+?)</div>', first_page) or \
@@ -511,7 +513,8 @@ class LanZouCloud(object):
             f_size = f_size.group(1) if f_size else ''
             f_desc = re.search(r'文件描述.+?</span><br>\n?\s*(.*?)\s*</td>', first_page)
             f_desc = f_desc.group(1) if f_desc else ''
-            first_page = self._get(self._host_url + para)
+            logger.debug("params get",prop_host)
+            first_page = self._get(prop_host + para)
             if not first_page:
                 return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time, size=f_size, desc=f_desc, pwd=pwd, url=share_url)
             first_page = remove_notes(first_page.text)
@@ -520,7 +523,7 @@ class LanZouCloud(object):
             if len(sign) < 20:  # 此时 sign 保存在变量里面, 变量名是 sign 匹配的字符
                 sign = re.search(rf"var {sign}\s*=\s*'(.+?)';", first_page).group(1)
             post_data = {'action': 'downprocess', 'sign': sign, 'ves': 1}
-            link_info = self._post(self._host_url + '/ajaxm.php', post_data)
+            link_info = self._post(prop_host + '/ajaxm.php', post_data)
             if not link_info:
                 return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time, size=f_size, desc=f_desc, pwd=pwd, url=share_url)
             link_info = link_info.json()
@@ -952,8 +955,9 @@ class LanZouCloud(object):
             return LanZouCloud.URL_INVALID
         if not os.path.exists(task.path):
             os.makedirs(task.path)
-
+        logger.error(f'down_file_by_url: {share_url}')
         info = self.get_durl_by_url(share_url, task.pwd)
+        logger.error(f'down_file_by_url: {info}')
         if info.code != LanZouCloud.SUCCESS:
             task.info = info.code
             logger.error(f'File direct url info: {info}')

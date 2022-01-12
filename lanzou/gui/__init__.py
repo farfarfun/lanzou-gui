@@ -1,1 +1,1 @@
-version = '0.4.1 by Leon406'
+version = '0.4.2 by Leon406'

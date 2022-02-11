@@ -1038,7 +1038,7 @@ class LanZouCloud(object):
                 os.remove(new_file_path)  # 存在同名文件则删除
             os.rename(file_path, new_file_path)
             with open(new_file_path, 'rb+') as f:
-                truncate_size = 517 if is_protocol_3 else 512
+                truncate_size = 512
                 f.seek(-truncate_size, os.SEEK_END)
                 f.truncate()
         return LanZouCloud.SUCCESS

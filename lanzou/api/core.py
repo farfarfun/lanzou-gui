@@ -46,7 +46,7 @@ class LanZouCloud(object):
         self._timeout = 5  # 每个请求的超时(不包含下载响应体的用时)
         self._max_size = 100  # 单个文件大小上限 MB
         self._upload_delay = (0, 0)  # 文件上传延时
-        self._host_url = 'https://pan.lanzouo.com'
+        self._host_url = 'https://www.lanzoub.com'
         self._doupload_url = 'https://pc.woozooo.com/doupload.php'
         self._account_url = 'https://pc.woozooo.com/account.php'
         self._mydisk_url = 'https://pc.woozooo.com/mydisk.php'
@@ -89,9 +89,9 @@ class LanZouCloud(object):
 
     def _choose_lanzou_host(self):
         """选择一个可用的蓝奏域名"""
-        hosts = ("lanzouw", "lanzoui", "lanzoux")
+        hosts = ("lanzoub", "lanzouw", "lanzoui")
         for i in hosts:
-            host = f"https://wwa.{i}.com"
+            host = f"https://www.{i}.com"
             try:
                 requests.get(host, headers=self._headers, timeout=3, verify=False)
                 self._host_url = host
@@ -450,7 +450,8 @@ class LanZouCloud(object):
         :param share_url: 文件分享链接
         :param pwd: 文件提取码(如果有的话)
         """
-        prop_host =self._host_url.replace("lanzouw.com","lanzoui.com")
+        prop_host = re.sub(r"lanzou(\w)", "lanzoub", self._host_url)
+        share_url = re.sub(r"lanzou(\w)", "lanzoub", share_url)
         if not is_file_url(share_url):  # 非文件链接返回错误
             return FileDetail(LanZouCloud.URL_INVALID, pwd=pwd, url=share_url)
 
@@ -1045,6 +1046,7 @@ class LanZouCloud(object):
 
     def get_folder_info_by_url(self, share_url, dir_pwd='') -> FolderDetail():
         """获取文件夹里所有文件的信息"""
+        share_url = re.sub(r"lanzou(\w)", "lanzoub", share_url)
         if is_file_url(share_url):
             return FolderDetail(LanZouCloud.URL_INVALID)
         try:
@@ -1303,6 +1305,7 @@ class LanZouCloud(object):
 
     def get_share_info_by_url(self, f_url, pwd="") -> ShareInfo:
         """获取分享文件信息 和 get_file_info_by_url 类似，少一个下载直链"""
+        f_url = re.sub(r"lanzou(\w)", "lanzoub", f_url)
         if not is_file_url(f_url):
             return ShareInfo(LanZouCloud.URL_INVALID)
         first_page = self._get(f_url)  # 文件分享页面(第一页)

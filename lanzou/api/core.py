@@ -471,6 +471,7 @@ class LanZouCloud(object):
                 return FileDetail(LanZouCloud.NETWORK_ERROR, pwd=pwd, url=share_url)
 
         first_page = remove_notes(first_page.text)  # 去除网页里的注释
+        logger.error(f"get_file_info_by_url first_page={first_page}")
         if '文件取消' in first_page or '文件不存在' in first_page:
             return FileDetail(LanZouCloud.FILE_CANCELLED, pwd=pwd, url=share_url)
 
@@ -482,7 +483,9 @@ class LanZouCloud(object):
             sign = re.search(r"sign=(\w+?)&", first_page)
             sign = sign.group(1) if sign else ""
             post_data = {'action': 'downprocess', 'sign': sign, 'p': pwd}
+            logger.error(f"get_file_info_by_url post_data={post_data}")
             link_info = self._post(self._host_url + '/ajaxm.php', post_data)  # 保存了重定向前的链接信息和文件名
+            logger.error(f"get_file_info_by_url link_info={link_info}")
             second_page = self._get(share_url)  # 再次请求文件分享页面，可以看见文件名，时间，大小等信息(第二页)
             if not link_info or not second_page.text:
                 return FileDetail(LanZouCloud.NETWORK_ERROR, pwd=pwd, url=share_url)
@@ -497,7 +500,8 @@ class LanZouCloud(object):
             f_desc = re.search(r'class="n_box_des">(.*?)</div>', second_page)
             f_desc = f_desc.group(1) if f_desc else ''
         else:  # 文件没有设置提取码时,文件信息都暴露在分享页面上
-            para = re.search(r'<iframe.*?src="(.+?)"', first_page).group(1)  # 提取下载页面 URL 的参数
+            para = re.search(r'<iframe class=.*?src="(.+?)"', first_page).group(1)  # 提取下载页面 URL 的参数
+            logger.error(f"get_file_info_by_url else para={para}")
             # 文件名位置变化很多
             f_name = re.search(r"<title>(.+?) - 蓝奏云</title>", first_page) or \
                      re.search(r'<div class="filethetext".+?>([^<>]+?)</div>', first_page) or \
@@ -515,6 +519,7 @@ class LanZouCloud(object):
             f_desc = re.search(r'文件描述.+?</span><br>\n?\s*(.*?)\s*</td>', first_page)
             f_desc = f_desc.group(1) if f_desc else ''
             first_page = self._get(self._host_url + para)
+            logger.error(f"get_file_info_by_url else first_page={first_page.text}")
             if not first_page:
                 return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time, size=f_size, desc=f_desc, pwd=pwd, url=share_url)
             first_page = remove_notes(first_page.text)

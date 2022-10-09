@@ -6,22 +6,21 @@ import os
 import pickle
 import re
 import shutil
-from threading import Thread
-from time import sleep
-from datetime import datetime
-from urllib3 import disable_warnings
-from random import shuffle, uniform
-from typing import List, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+from random import shuffle, uniform
+from time import sleep
+from typing import List, Tuple
 
 import requests
 from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
+from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
-from lanzou.api.models import FileList, FolderList
+
+from lanzou.api.models import FileList
 from lanzou.api.types import *
 from lanzou.api.utils import *
 from lanzou.debug import logger
-
 
 __all__ = ['LanZouCloud']
 
@@ -531,11 +530,16 @@ class LanZouCloud(object):
             # 某些特殊情况 share_url 会出现 webpage 参数, post_data 需要更多参数
             # https://github.com/zaxtyson/LanZouCloud-API/issues/74
             if "?webpage=" in share_url:
-                ajax_data = re.search(r"var ajaxdata\s*=\s*'(.+?)';", first_page).group(1)
-                web_sign = re.search(r"var websign\s*=\s*'(.+?)';", first_page).group(1)
-                web_sign_key = re.search(r"var websignkey\s*=\s*'(.+?)';", first_page).group(1)
-                post_data = {'action': 'downprocess', 'signs': ajax_data, 'sign': sign, 'ves': 1,
-                             'websign': web_sign, 'websignkey': web_sign_key}
+                try:
+                    ajax_data = re.search(r"var ajaxdata\s*=\s*'(.+?)';", first_page).group(1)
+                    web_sign = re.search(r"var awebsigna\s*=\s*'(.+?)';", first_page).group(1)
+                    web_sign_key = re.search(r"var cwebsignkeyc\s*=\s*'(.+?)';", first_page).group(1)
+                    post_data = {'action': 'downprocess', 'signs': ajax_data, 'sign': sign, 'ves': 1,
+                                 'websign': web_sign, 'websignkey': web_sign_key}
+                except AttributeError as e:  # 正则匹配失败
+                    logger.error(e)
+                    return FileDetail(LanZouCloud.FAILED)
+
             link_info = self._post(self._host_url + '/ajaxm.php', post_data)
             if not link_info:
                 return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time, size=f_size, desc=f_desc, pwd=pwd, url=share_url)
@@ -796,13 +800,13 @@ class LanZouCloud(object):
             self.delete(file_list.find_by_name(filename).id)
         logger.debug(f'Upload file file_path={file_path} to folder_id={folder_id}')
 
-        file_ = open(file_path, 'rb')
+        file = open(file_path, 'rb')
         post_data = {
             "task": "1",
             "folder_id": str(folder_id),
             "id": "WU_FILE_0",
             "name": filename,
-            "upload_file": (filename, file_, 'application/octet-stream')
+            "upload_file": (filename, file, 'application/octet-stream')
         }
 
         post_data = MultipartEncoder(post_data)
@@ -828,6 +832,7 @@ class LanZouCloud(object):
         result = self._post('https://pc.woozooo.com/fileup.php', monitor, headers=tmp_header, timeout=None)
         if not result:  # 网络异常
             logger.debug('Upload file no result')
+            file.close()
             return LanZouCloud.NETWORK_ERROR, 0, True
         else:
             if result.status_code == 413:
@@ -836,13 +841,14 @@ class LanZouCloud(object):
             result = result.json()
         if result["zt"] != 1:
             logger.debug(f'Upload failed: result={result}')
+            file.close()
             return LanZouCloud.FAILED, 0, True  # 上传失败
 
         file_id = result["text"][0]["id"]
         self.set_passwd(file_id)  # 文件上传后默认关闭提取码
         if need_delete:
-            file_.close()
             os.remove(file_path)
+        file.close()
         return LanZouCloud.SUCCESS, int(file_id), True
 
     def _upload_big_file(self, task: object, file_path, dir_id, callback=None):

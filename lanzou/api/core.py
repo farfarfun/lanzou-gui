@@ -1073,7 +1073,7 @@ class LanZouCloud(object):
             return FolderDetail(LanZouCloud.FILE_CANCELLED)
         if ('id="pwdload"' in html or 'id="passwddiv"' in html or '请输入密码' in html) and len(dir_pwd) == 0:
             return FolderDetail(LanZouCloud.LACK_PASSWORD)
-
+        
         if "acw_sc__v2" in html:
             # 在页面被过多访问或其他情况下，有时候会先返回一个加密的页面，其执行计算出一个acw_sc__v2后放入页面后再重新访问页面才能获得正常页面
             # 若该页面进行了js加密，则进行解密，计算acw_sc__v2，并加入cookie
@@ -1084,10 +1084,11 @@ class LanZouCloud(object):
 
         try:
             # 获取文件需要的参数
+            print("======")
             html = remove_notes(html)
             lx = re.findall(r"'lx':'?(\d)'?,", html)[0]
-            t = re.findall(r"var [0-9a-z]{6} = '(\d{10})';", html)[0]
-            k = re.findall(r"var [0-9a-z]{6} = '([0-9a-z]{15,})';", html)[0]
+            t = re.findall(r"var \w{6} = '(\d{10})';", html)[0]
+            k = re.findall(r"var \w{6} = '([0-9a-z]{15,})';", html)[0]
             # 文件夹的信息
             folder_id = re.findall(r"'fid':'?(\d+)'?,", html)[0]
             folder_name = re.search(r"var.+?='(.+?)';\n.+document.title", html) or \
@@ -1382,3 +1383,12 @@ class LanZouCloud(object):
             return LanZouCloud.NETWORK_ERROR
         username = re.search(r"com/u/(\w+?)\?t2", remove_notes(resp.text))
         return username.group(1) if username else None
+
+
+if __name__ == "__main__":
+    lanzou = LanZouCloud()
+    fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8h93hi")
+    print(fileDetail)
+    print("_______________")
+    fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8rnc4d", "80nl")
+    print(fileDetail)

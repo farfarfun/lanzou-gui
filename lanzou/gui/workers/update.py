@@ -17,7 +17,7 @@ class CheckUpdateWorker(QThread):
         self._mutex = QMutex()
         self._is_work = False
         self._folder_id = None
-        self._api = 'https://api.github.com/repos/rachpt/lanzou-gui/releases/latest'
+        self._api = 'https://api.github.com/repos/Leon406/lanzou-gui/releases/latest'
         self._api_mirror = 'https://gitee.com/api/v5/repos/rachpt/lanzou-gui/releases/latest'
 
     def set_values(self, ver: str, manual: bool=False):

@@ -45,6 +45,10 @@ def get_lanzou_logo():
     return QIcon(get_logo_path())
 
 
+def open_in_explorer(task):
+    QDesktopServices.openUrl(QUrl.fromLocalFile(task.path))
+
+
 class MainWindow(Ui_MainWindow):
 
     def __init__(self):
@@ -1213,9 +1217,10 @@ class MainWindow(Ui_MainWindow):
             _action = QPushButton()
             _action.resize(_action.sizeHint())
 
-            _status.setDisabled(True)
+            # _status.setDisabled(True)
             if task.rate >= 1000 and task.current >= task.total_file:
                 _status.setText("已完成")
+                _status.clicked.connect(lambda: open_in_explorer(task))
                 _status.setStyleSheet(jobs_btn_completed_style)
                 _action.setText("删除")
                 _action.clicked.connect(lambda: self.del_work_job(task))

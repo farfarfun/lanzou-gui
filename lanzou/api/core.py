@@ -508,17 +508,19 @@ class LanZouCloud(object):
                      re.search(r"var filename = '(.+?)';", first_page) or \
                      re.search(r'id="filenajax">(.+?)</div>', first_page) or \
                      re.search(r'<div class="b"><span>([^<>]+?)</span></div>', first_page)
+
             f_name = f_name.group(1).replace("*", "_") if f_name else "未匹配到文件名"
 
             f_time = re.search(r'>(\d+\s?[秒天分小][钟时]?前|[昨前]天\s?[\d:]+?|\d+\s?天前|\d{4}-\d\d-\d\d)<', first_page)
             f_time = f_time.group(1) if f_time else ''
+
             f_size = re.search(r'大小.+?(\d[\d\.,]+\s?[BKM]?)<', first_page) or \
                      re.search(r'大小：(.+?)</div>', first_page)  # VIP 分享页面
             f_size = f_size.group(1) if f_size else ''
             f_desc = re.search(r'文件描述.+?</span><br>\n?\s*(.*?)\s*</td>', first_page)
             f_desc = f_desc.group(1) if f_desc else ''
             first_page = self._get(self._host_url + para)
-            logger.error(f"get_file_info_by_url else first_page={first_page.text}")
+            logger.info(f"get_file_info_by_url else first_page={first_page.text}")
             if not first_page:
                 return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time, size=f_size, desc=f_desc, pwd=pwd, url=share_url)
             first_page = remove_notes(first_page.text)
@@ -1387,8 +1389,10 @@ class LanZouCloud(object):
 
 if __name__ == "__main__":
     lanzou = LanZouCloud()
-    fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8h93hi")
-    print(fileDetail)
-    print("_______________")
-    fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8rnc4d", "80nl")
+    # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8h93hi")
+    # print(fileDetail)
+    # print("_______________")
+    # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8rnc4d", "80nl")
+    # print(fileDetail)
+    fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
     print(fileDetail)

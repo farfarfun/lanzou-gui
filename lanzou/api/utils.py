@@ -42,6 +42,7 @@ def name_format(name: str) -> str:
     name = name.replace(u'\xa0', ' ').replace(u'\u3000', ' ').replace('  ', ' ')  # 去除其它字符集的空白符,去除重复空白字符
     return re.sub(r'[$%^!*<>)(+=`\'\"/:;,?]', '', name)
 
+
 def convert_file_size_to_int(size_str: str) -> int:
     """文件大小描述转化为字节大小"""
     if 'G' in size_str:
@@ -103,7 +104,8 @@ def is_name_valid(filename: str) -> bool:
                          'crx', 'rpm', 'txf', 'pdf', 'apk', 'ipa', 'txt', 'mobi', 'osk', 'dmg', 'rp', 'osz', 'jar',
                          'ttc', 'z', 'w3x', 'xlsx', 'cetrainer', 'ct', 'rar', 'mp3', 'pptx', 'mobileconfig', 'epub',
                          'imazingapp', 'doc', 'iso', 'img', 'appimage', '7z', 'rplib', 'lolgezi', 'exe', 'azw3', 'zip',
-                         'conf', 'tar', 'dll', 'flac', 'xpa', 'lua', 'cad', 'hwt', 'accdb', 'ce', 'xmind', 'enc', 'bds', 'bdi', 'ssf', 'it', 'gz')
+                         'conf', 'tar', 'dll', 'flac', 'xpa', 'lua', 'cad', 'hwt', 'accdb', 'ce', 'xmind', 'enc', 'bds',
+                         'bdi', 'ssf', 'it', 'gz', 'pkg', 'cfg')
 
     return filename.split('.')[-1].lower() in valid_suffix_list
 
@@ -118,7 +120,7 @@ def is_file_url(share_url: str) -> bool:
         return True
     else:  # VIP 用户的 URL 很随意
         try:
-            html = requests.get(share_url, headers=headers,verify=False).text
+            html = requests.get(share_url, headers=headers, verify=False).text
             html = remove_notes(html)
             return True if re.search(r'class="fileinfo"|id="file"|文件描述', html) else False
         except (requests.RequestException, Exception) as e:
@@ -178,7 +180,11 @@ def big_file_split(file_path: str, max_size: int = 100, start_byte: int = 0) -> 
 
     def get_random_size() -> int:
         """按权重生成一个不超过 max_size 的文件大小"""
-        reduce_size = choices([uniform(0, max_size/10), uniform(max_size/10, 2*max_size/10), uniform(4*max_size/10, 6*max_size/10), uniform(6*max_size/10, 8*max_size/10)], weights=[2, 5, 2, 1])
+        reduce_size = choices([uniform(0, max_size / 10),
+                               uniform(max_size / 10, 2 * max_size / 10),
+                               uniform(4 * max_size / 10, 6 * max_size / 10),
+                               uniform(6 * max_size / 10, 8 * max_size / 10)],
+                              weights=[2, 5, 2, 1])
         return round((max_size - reduce_size[0]) * 1048576)
 
     def get_random_name() -> str:
@@ -239,7 +245,6 @@ def let_me_upload(file_path):
         data = pickle.dumps(data, protocol=4)
         out_f.write(data)
     return new_file_path
-
 
 
 def auto_rename(file_path) -> str:

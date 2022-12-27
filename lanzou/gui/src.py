@@ -20,6 +20,7 @@ img_lists = ['desc.ico', 'select_none.ico', 'logo3.gif', 'txt.gif', 'share.ico',
 
 
 # https://pc.woozooo.com/images/filetype/accdb.gif 获取对应扩展图片
+# 格式显示测试链接 https://leon.lanzoub.com/b0dazruwd 提取码：1111
 xapk_gif = "R0lGODlhFAAUAIAAABHq5////yH5BAEAAAEALAAAAAAUABQAAAI1jI+pCbwLYnysyTAplrzpr0wdt1XbaHmHiKZm6yIsWsopna33WIftBwPlcpqhqqgigpZMRAEAOw=="
 bds_gif = "R0lGODlhEAAQAIAAACkpKf///yH5BAEAAAEALAAAAAAQABAAAAIojI9pwO19QHosqvDsxXVFqGGh5JWiSZ5ch45uC6+pOl9prdwUtfVBAQA7"
 xmind_gif = "R0lGODlhEAAQAIAAACkpKf///yH5BAEAAAEALAAAAAAQABAAAAIojI9pwO19QHosqvDsxXVtjXniKIWjiUoluKKs1aYkspY1DW41RX1fAQA7"

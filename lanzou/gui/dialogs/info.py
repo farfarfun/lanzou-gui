@@ -3,9 +3,9 @@ from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import (QLineEdit, QDialog, QLabel, QFormLayout,
                              QDialogButtonBox, QVBoxLayout)
 
-from lanzou.gui.qss import dialog_qss_style
-from lanzou.gui.others import AutoResizingTextEdit
 from lanzou.debug import SRC_DIR
+from lanzou.gui.others import AutoResizingTextEdit
+from lanzou.gui.qss import dialog_qss_style
 
 
 class InfoDialog(QDialog):

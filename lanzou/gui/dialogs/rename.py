@@ -2,8 +2,8 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QDialog, QLabel, QGridLayout, QDialogButtonBox, QLineEdit, QTextEdit
 
-from lanzou.gui.qss import dialog_qss_style
 from lanzou.debug import SRC_DIR
+from lanzou.gui.qss import dialog_qss_style
 
 
 class RenameDialog(QDialog):
@@ -25,12 +25,14 @@ class RenameDialog(QDialog):
         self.setWindowIcon(QIcon(SRC_DIR + "desc.ico"))
         self.lb_name = QLabel()
         self.lb_name.setText("文件夹名：")
-        self.lb_name.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
+        self.lb_name.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
         self.tx_name = QLineEdit()
         self.lb_desc = QLabel()
         self.tx_desc = QTextEdit()
         self.lb_desc.setText("描　　述：")
-        self.lb_desc.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
+        self.lb_desc.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
 
         self.buttonBox = QDialogButtonBox()
         self.buttonBox.setOrientation(Qt.Orientation.Horizontal)

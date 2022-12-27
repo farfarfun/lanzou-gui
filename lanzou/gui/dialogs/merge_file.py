@@ -12,9 +12,9 @@ from PyQt6.QtWidgets import (
     QFileDialog,
 )
 
+from lanzou.debug import SRC_DIR
 from lanzou.gui.others import MyLineEdit
 from lanzou.gui.qss import others_style, btn_style
-from lanzou.debug import SRC_DIR
 
 
 def get_minimum_file(file_lst: list) -> str:
@@ -37,7 +37,6 @@ def get_minimum_file(file_lst: list) -> str:
 def un_serialize(folder):
     """反序列化文件信息数据"""
     txt_lst = []
-    msg = ""
     folder_lst = os.listdir(folder)
     for item in folder_lst:
         _file = os.path.join(folder, item)

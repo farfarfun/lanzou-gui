@@ -5,7 +5,7 @@
 import os
 
 
-class Job():
+class Job:
     def __init__(self, url, tp, total_file=1):
         self._url = url
         self._type = tp

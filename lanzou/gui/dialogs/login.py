@@ -1,5 +1,6 @@
 import os
 import re
+
 import browser_cookie3
 # https://github.com/borisbabic/browser_cookie3/pull/70
 # from lanzou import browser_cookie3_n as browser_cookie3
@@ -8,14 +9,13 @@ from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import (QDialog, QLabel, QLineEdit, QTextEdit, QPushButton, QFormLayout,
                              QHBoxLayout, QVBoxLayout, QMessageBox, QFileDialog, QTabWidget, QWidget)
 
+from lanzou import USE_WEB_ENG
+from lanzou.debug import logger, SRC_DIR
 from lanzou.gui.others import QDoublePushButton, MyLineEdit, AutoResizingTextEdit
 from lanzou.gui.qss import dialog_qss_style, btn_style
-from lanzou.debug import logger, SRC_DIR
-from lanzou import USE_WEB_ENG
 
 if USE_WEB_ENG:  # 此处不能移动到后面，会抛出异常
     from lanzou.login_assister import LoginWindow
-
 
 is_windows = True if os.name == 'nt' else False
 
@@ -70,8 +70,10 @@ class LoginDialog(QDialog):
         # 更新控件显示内容
         self.name_ed.setText(self._user)
         self.pwd_ed.setText(self._pwd)
-        try: text = ";".join([f'{k}={v}' for k, v in self._cookie.items()])
-        except: text = ''
+        try:
+            text = ";".join([f'{k}={v}' for k, v in self._cookie.items()])
+        except:
+            text = ''
         self.cookie_ed.setPlainText(text)
 
     def initUI(self):
@@ -87,8 +89,8 @@ class LoginDialog(QDialog):
         self.hand_tab = QWidget()
 
         # Add tabs
-        self.tabs.addTab(self.auto_tab,"自动获取Cookie")
-        self.tabs.addTab(self.hand_tab,"手动输入Cookie")
+        self.tabs.addTab(self.auto_tab, "自动获取Cookie")
+        self.tabs.addTab(self.hand_tab, "手动输入Cookie")
         self.auto_get_cookie_ok = AutoResizingTextEdit("🔶点击👇自动获取浏览器登录信息👇")
         self.auto_get_cookie_ok.setReadOnly(True)
         self.auto_get_cookie_btn = QPushButton("自动读取浏览器登录信息")
@@ -111,7 +113,7 @@ class LoginDialog(QDialog):
         self.cookie_lb = QLabel("&Cookie")
         self.cookie_ed = QTextEdit()
         notice = "由于滑动验证的存在，需要输入cookie，cookie请使用浏览器获取\n" + \
-            "cookie会保存在本地，下次使用。其格式如下：\n ylogin=value1; phpdisk_info=value2"
+                 "cookie会保存在本地，下次使用。其格式如下：\n ylogin=value1; phpdisk_info=value2"
         self.cookie_ed.setPlaceholderText(notice)
         self.cookie_lb.setBuddy(self.cookie_ed)
 
@@ -305,8 +307,10 @@ class LoginDialog(QDialog):
                 self._cookie = None
             if not pwd:  # 输入空密码，表示删除对pwd的存储，并使用以前的cookie
                 self._cookie = user_info[2]
-                try: text = ";".join([f'{k}={v}' for k, v in self._cookie.items()])
-                except: text = ''
+                try:
+                    text = ";".join([f'{k}={v}' for k, v in self._cookie.items()])
+                except:
+                    text = ''
                 self.cookie_ed.setPlainText(text)
         self._pwd = pwd
 
@@ -314,8 +318,10 @@ class LoginDialog(QDialog):
         cookies = self.cookie_ed.toPlainText()
         if cookies:
             try:
-                self._cookie = {kv.split("=")[0].strip(" "): kv.split("=")[1].strip(" ") for kv in cookies.split(";") if kv.strip(" ") }
-            except: self._cookie = None
+                self._cookie = {kv.split("=")[0].strip(" "): kv.split("=")[1].strip(" ") for kv in cookies.split(";") if
+                                kv.strip(" ")}
+            except:
+                self._cookie = None
 
     def change_cancel_btn(self):
         self.update_selection(self._config.name)
@@ -343,15 +349,18 @@ class LoginDialog(QDialog):
                 result = os.popen(f'{self._cookie_assister} {self._user} {self._pwd}')
                 cookie = result.read()
                 try:
-                    self._cookie = {kv.split("=")[0].strip(" "): kv.split("=")[1].strip(" ") for kv in cookie.split(";")}
-                except: self._cookie = None
+                    self._cookie = {kv.split("=")[0].strip(" "): kv.split("=")[1].strip(" ") for kv in
+                                    cookie.split(";")}
+                except:
+                    self._cookie = None
                 if not self._cookie:
                     return None
                 up_info = {"name": self._user, "pwd": self._pwd, "cookie": self._cookie, "work_id": -1}
                 self._config.set_infos(up_info)
                 self.clicked_ok.emit()
                 self.close()
-            except: pass
+            except:
+                pass
         else:
             title = '请使用 Cookie 登录或是选择 登录辅助程序'
             msg = '没有输入 Cookie，或者没有找到登录辅助程序！\n\n' + \
@@ -386,7 +395,8 @@ class LoginDialog(QDialog):
                 self.auto_get_cookie_ok.setPlainText("✅获取成功即将登录……")
                 QTimer.singleShot(2000, self._close_dialog)
             else:
-                self.auto_get_cookie_ok.setPlainText("❌获取失败\n请提前使用支持的浏览器登录蓝奏云，读取前完全退出浏览器！\n支持的浏览器与顺序：\nchrome, chromium, opera, edge, firefox")
+                self.auto_get_cookie_ok.setPlainText(
+                    "❌获取失败\n请提前使用支持的浏览器登录蓝奏云，读取前完全退出浏览器！\n支持的浏览器与顺序：\nchrome, chromium, opera, edge, firefox")
 
     def _close_dialog(self):
         """关闭对话框"""

@@ -1,6 +1,5 @@
 from base64 import b64decode
 
-
 img_lists = ['desc.ico', 'select_none.ico', 'logo3.gif', 'txt.gif', 'share.ico', 'xpa.gif', 'dmg.gif',
              'cetrainer.gif', 'delete.ico', 'folder.gif', 'ke.gif', 'select_all.ico', 'keys.ico',
              'rec_bin.ico', 'ct.gif', 'img.gif', 'rar.gif', 'xls.gif', 'jar.gif', 'bat.gif',
@@ -16,8 +15,7 @@ img_lists = ['desc.ico', 'select_none.ico', 'logo3.gif', 'txt.gif', 'share.ico',
              'crx.gif', 'deb.gif', 'enc.gif', 'flac.gif', 'gz.gif', 'hwt.gif', 'imazingapp.gif', 'it.gif',
              'lolgezi.gif', 'mp3.gif', 'mobileconfig.gif', 'pkg.gif', 'rp.gif', 'rplib.gif', 'rpm.gif',
              'ssf.gif', 'xlsx.gif', 'xmind.gif', 'bds.gif', 'xapk.gif'
-]
-
+             ]
 
 # https://pc.woozooo.com/images/filetype/accdb.gif 获取对应扩展图片
 # 格式显示测试链接 https://leon.lanzoub.com/b0dazruwd 提取码：1111

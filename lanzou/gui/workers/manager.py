@@ -1,10 +1,11 @@
-from time import sleep, time
 from random import uniform
+from time import sleep, time
+
 from PyQt6.QtCore import QThread, pyqtSignal, QMutex
 
+from lanzou.debug import logger
 from lanzou.gui.workers.down import Downloader
 from lanzou.gui.workers.upload import Uploader
-from lanzou.debug import logger
 
 
 def change_size_unit(total):
@@ -53,6 +54,7 @@ def show_progress(file_name, total_size, now_size, speed=0, symbol="█"):
 
 class Callback(QThread):
     '''回调显示进度'''
+
     def __init__(self, task, parent=None):
         super(Callback, self).__init__(parent)
         self._task = task

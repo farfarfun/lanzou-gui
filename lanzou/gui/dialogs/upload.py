@@ -1,13 +1,14 @@
 import os
+
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QPixmap, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (QDialog, QLabel, QDialogButtonBox, QPushButton, QListView,
                              QVBoxLayout, QHBoxLayout, QAbstractItemView, QFileDialog)
 
-from lanzou.gui.qss import dialog_qss_style
-from lanzou.gui.others import MyListView
-from lanzou.gui.models import UpJob
 from lanzou.debug import SRC_DIR
+from lanzou.gui.models import UpJob
+from lanzou.gui.others import MyListView
+from lanzou.gui.qss import dialog_qss_style
 
 
 class UploadDialog(QDialog):

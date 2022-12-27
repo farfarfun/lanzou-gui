@@ -1,12 +1,13 @@
 import os
+
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (QDialog, QLabel, QDialogButtonBox, QLineEdit, QCheckBox,
                              QHBoxLayout, QVBoxLayout, QFormLayout, QFileDialog)
 
-from lanzou.gui.qss import dialog_qss_style
-from lanzou.gui.others import MyLineEdit, AutoResizingTextEdit
 from lanzou.debug import SRC_DIR
+from lanzou.gui.others import MyLineEdit, AutoResizingTextEdit
+from lanzou.gui.qss import dialog_qss_style
 
 
 class SettingDialog(QDialog):
@@ -178,7 +179,8 @@ class SettingDialog(QDialog):
 
         buttonBox = QDialogButtonBox()
         buttonBox.setOrientation(Qt.Orientation.Horizontal)
-        buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Reset | QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+        buttonBox.setStandardButtons(
+            QDialogButtonBox.StandardButton.Reset | QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         buttonBox.button(QDialogButtonBox.StandardButton.Reset).setText("重置")
         buttonBox.button(QDialogButtonBox.StandardButton.Save).setText("保存")
         buttonBox.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")

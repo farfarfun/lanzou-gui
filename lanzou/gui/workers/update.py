@@ -1,7 +1,8 @@
-from time import sleep
 import re
+
 import requests
 from PyQt6.QtCore import QThread, pyqtSignal, QMutex
+
 from lanzou.debug import logger
 
 
@@ -20,7 +21,7 @@ class CheckUpdateWorker(QThread):
         self._api = 'https://api.github.com/repos/Leon406/lanzou-gui/releases/latest'
         self._api_mirror = 'https://gitee.com/api/v5/repos/rachpt/lanzou-gui/releases/latest'
 
-    def set_values(self, ver: str, manual: bool=False):
+    def set_values(self, ver: str, manual: bool = False):
         # 检查更新
         self._ver = ver
         self._manual = manual
@@ -43,7 +44,8 @@ class CheckUpdateWorker(QThread):
                 resp = requests.get(self._api).json()
             except (requests.RequestException, TimeoutError, requests.exceptions.ConnectionError):
                 logger.debug("chcek update from github error")
-                try: resp = requests.get(self._api_mirror).json()
+                try:
+                    resp = requests.get(self._api_mirror).json()
                 except:
                     logger.debug("chcek update from gitee error")
             except Exception as e:
@@ -73,7 +75,8 @@ class CheckUpdateWorker(QThread):
                     logger.error(f"Check Update Version error: e={e}")
             else:
                 if self._manual:
-                    self.infos.emit("v0.0.0", f"检查更新时 <a href='{self._api}'>api.github.com</a>、<a href='{self._api_mirror}'>gitee.com</a> 拒绝连接，请稍后重试！")
+                    self.infos.emit("v0.0.0",
+                                    f"检查更新时 <a href='{self._api}'>api.github.com</a>、<a href='{self._api_mirror}'>gitee.com</a> 拒绝连接，请稍后重试！")
             self._manual = False
             self._is_work = False
             self._mutex.unlock()

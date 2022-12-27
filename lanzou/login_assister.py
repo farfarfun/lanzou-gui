@@ -1,7 +1,8 @@
 import sys
+
 from PyQt5.QtCore import QUrl, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
+from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout
 
 
 class MyWebEngineView(QWebEngineView):
@@ -30,7 +31,8 @@ class MyWebEngineView(QWebEngineView):
                         l_pwd[0].value = '{}';
                     }};""".format(self._user, self._pwd)
             self.page().runJavaScript(js)
-        except: pass
+        except:
+            pass
         # except Exception as e:
         #     print("Err:", e)
 
@@ -75,8 +77,10 @@ class LoginWindow(QDialog):
             cookie = self.web.get_cookie()
             if cookie:
                 if self._gui:
-                    try: print(";".join([f'{k}={v}' for k, v in cookie.items()]), end='')
-                    except: pass
+                    try:
+                        print(";".join([f'{k}={v}' for k, v in cookie.items()]), end='')
+                    except:
+                        pass
                 else:
                     self.cookie.emit(cookie)
                 self.reject()

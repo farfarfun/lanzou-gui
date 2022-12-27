@@ -1,7 +1,8 @@
 from time import sleep
-from PyQt6.QtCore import QThread, pyqtSignal, QMutex
-from lanzou.api import LanZouCloud
 
+from PyQt6.QtCore import QThread, pyqtSignal, QMutex
+
+from lanzou.api import LanZouCloud
 from lanzou.api.types import RecFolder, RecFile
 from lanzou.debug import logger
 
@@ -73,7 +74,7 @@ class RecManipulator(QThread):
         self._is_work = False
         self._action = None
         self._folders = []
-        self._files= []
+        self._files = []
 
     def set_disk(self, disk):
         self._disk = disk
@@ -82,7 +83,7 @@ class RecManipulator(QThread):
         # 操作回收站选定行
         self._action = None
         self._folders = []
-        self._files= []
+        self._files = []
         for item in infos:
             if isinstance(item, RecFile):
                 self._files.append(item.id)
@@ -139,7 +140,7 @@ class RecManipulator(QThread):
             self._is_work = False
             self._action = None
             self._folders = []
-            self._files= []
+            self._files = []
             self._mutex.unlock()
         else:
             self.msg.emit("后台正在运行，请稍后重试！", 3100)

@@ -23,4 +23,4 @@ def why_error(code):
         return f'未知错误 {code}'
 
 
-__all__ = ['utils', 'types', 'models', 'LanZouCloud', 'version']
+__all__ = ['utils', 'types', 'models', 'LanZouCloud', 'version', 'why_error']

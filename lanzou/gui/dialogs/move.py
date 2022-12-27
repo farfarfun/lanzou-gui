@@ -2,13 +2,13 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QDialog, QLabel, QGridLayout, QDialogButtonBox, QComboBox
 
-from lanzou.gui.qss import dialog_qss_style
-from lanzou.gui.others import AutoResizingTextEdit
 from lanzou.debug import SRC_DIR
+from lanzou.gui.others import AutoResizingTextEdit
+from lanzou.gui.qss import dialog_qss_style
 
 
 class MoveFileDialog(QDialog):
-    '''移动文件对话框'''
+    """移动文件对话框"""
     new_infos = pyqtSignal(object)
 
     def __init__(self, parent=None):
@@ -42,13 +42,15 @@ class MoveFileDialog(QDialog):
         self.setWindowIcon(QIcon(SRC_DIR + "move.ico"))
         self.lb_name = QLabel()
         self.lb_name.setText("文件(夹)名：")
-        self.lb_name.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
+        self.lb_name.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
         self.tx_name = AutoResizingTextEdit()
         self.tx_name.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # 只读
         self.tx_name.setReadOnly(True)
         self.lb_new_path = QLabel()
         self.lb_new_path.setText("目标文件夹：")
-        self.lb_new_path.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
+        self.lb_new_path.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
         self.tx_new_path = QComboBox()
 
         self.buttonBox = QDialogButtonBox()

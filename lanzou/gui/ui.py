@@ -1,6 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from lanzou.gui.others import MyLineEdit, MyTableView
+
 from lanzou.debug import SRC_DIR
+from lanzou.gui.others import MyLineEdit, MyTableView
 
 
 class Ui_MainWindow(QtWidgets.QMainWindow):
@@ -69,7 +70,8 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.label_disk_loc.setObjectName("label_disk_loc")
         self.disk_loc_hbox.addWidget(self.label_disk_loc)
         self.disk_hlayout_top.addLayout(self.disk_loc_hbox)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding,
+                                           QtWidgets.QSizePolicy.Policy.Minimum)
         self.disk_hlayout_top.addItem(spacerItem)
         self.btn_disk_mkdir = QtWidgets.QPushButton(self.disk_tab)
         self.btn_disk_mkdir.setObjectName("btn_disk_mkdir")
@@ -83,7 +85,8 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.btn_disk_select_all = QtWidgets.QPushButton(self.disk_tab)
         self.btn_disk_select_all.setObjectName("btn_disk_select_all")
         self.disk_hlayout_bottom.addWidget(self.btn_disk_select_all)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding,
+                                            QtWidgets.QSizePolicy.Policy.Minimum)
         self.disk_hlayout_bottom.addItem(spacerItem1)
         self.btn_disk_delete = QtWidgets.QPushButton(self.disk_tab)
         self.btn_disk_delete.setObjectName("btn_disk_delete")
@@ -290,7 +293,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.login.setIcon(QtGui.QIcon(SRC_DIR + "login.ico"))
         self.login.setShortcut("Ctrl+L")
         self.logout.setIcon(QtGui.QIcon(SRC_DIR + "logout.ico"))
-        self.logout.setShortcut("Ctrl+Q")    # 登出快捷键
+        self.logout.setShortcut("Ctrl+Q")  # 登出快捷键
         self.logout.setEnabled(False)  # 初始状态
         self.download.setIcon(QtGui.QIcon(SRC_DIR + "download.ico"))
         self.download.setShortcut("Ctrl+J")

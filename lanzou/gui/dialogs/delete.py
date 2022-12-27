@@ -1,11 +1,10 @@
-
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QStandardItem, QStandardItemModel
-from PyQt6.QtWidgets import  QDialog, QLabel, QListView, QDialogButtonBox, QVBoxLayout
+from PyQt6.QtWidgets import QDialog, QLabel, QListView, QDialogButtonBox, QVBoxLayout
 
+from lanzou.debug import SRC_DIR
 from lanzou.gui.others import set_file_icon
 from lanzou.gui.qss import dialog_qss_style
-from lanzou.debug import SRC_DIR
 
 
 class DeleteDialog(QDialog):
@@ -56,7 +55,7 @@ class DeleteDialog(QDialog):
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
         self.setMinimumWidth(400)
-        self.resize(int(max_len*8), int(count*34+60))
+        self.resize(int(max_len * 8), int(count * 34 + 60))
 
     def btn_ok(self):
         self.new_infos.emit(self.out)

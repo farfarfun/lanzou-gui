@@ -1,5 +1,7 @@
 from time import sleep
+
 from PyQt6.QtCore import QThread, pyqtSignal, QMutex
+
 from lanzou.api import LanZouCloud
 from lanzou.debug import logger
 
@@ -23,12 +25,12 @@ class GetAllFoldersWorker(QThread):
 
     def set_values(self, org_infos):
         self.org_infos = org_infos  # 对话框标识文件与文件夹
-        self.move_infos = [] # 清除上次影响
+        self.move_infos = []  # 清除上次影响
         self.start()
 
     def move_file(self, infos):
         '''移动文件至新的文件夹'''
-        self.move_infos = infos # file_id, folder_id, f_name, type(size)
+        self.move_infos = infos  # file_id, folder_id, f_name, type(size)
         self.start()
 
     def __del__(self):
@@ -39,7 +41,7 @@ class GetAllFoldersWorker(QThread):
         self._is_work = False
         self._mutex.unlock()
 
-    def move_file_folder(self, info, no_err:bool, r_files:bool, r_folders:bool):
+    def move_file_folder(self, info, no_err: bool, r_files: bool, r_folders: bool):
         """移动文件(夹)"""
         # no_err 判断是否需要更新 UI
         if info.is_file:  # 文件

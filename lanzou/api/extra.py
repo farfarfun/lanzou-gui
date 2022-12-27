@@ -1,12 +1,11 @@
-import re
-import requests
 import json
+
+import requests
 
 from lanzou.api.utils import USER_AGENT
 from lanzou.debug import logger
 
 timeout = 2
-
 
 # 不登录一天
 short_url_server = "https://tturl.cn/api/buildDwz"
@@ -40,7 +39,7 @@ def get_short_url(url: str):
             "expireType": 1
         }
         try:
-            html = requests.post(short_url_server2, data=post_data,  verify=False, headers=headers, timeout=timeout).text
+            html = requests.post(short_url_server2, data=post_data, verify=False, headers=headers, timeout=timeout).text
             rsp = json.loads(html)
             if rsp:
                 short_url = rsp["data"]

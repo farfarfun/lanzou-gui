@@ -1,25 +1,25 @@
 from pickle import load, dump
+
 from lanzou.debug import CONFIG_FILE, DL_DIR
 
 __all__ = ['config']
 
 KEY = 152  # config 加密 key
 
-
 default_settings = {
-    "download_threads": 3,     # 同时三个下载任务
-    "timeout": 5,              # 每个请求的超时 s(不包含下载响应体的用时)
-    "max_size": 100,           # 单个文件大小上限 MB
+    "download_threads": 3,  # 同时三个下载任务
+    "timeout": 5,  # 每个请求的超时 s(不包含下载响应体的用时)
+    "max_size": 100,  # 单个文件大小上限 MB
     "dl_path": DL_DIR,
-    "time_fmt": False,         # 是否使用年月日时间格式
-    "to_tray": False,          # 关闭到系统托盘
+    "time_fmt": False,  # 是否使用年月日时间格式
+    "to_tray": False,  # 关闭到系统托盘
     "watch_clipboard": False,  # 监听系统剪切板
-    "debug": False,            # 调试
+    "debug": False,  # 调试
     "set_pwd": False,
     "pwd": "",
     "set_desc": False,
     "desc": "",
-    "upload_delay": 20,        # 上传大文件延时 0 - 20s
+    "upload_delay": 20,  # 上传大文件延时 0 - 20s
     "allow_big_file": False,
     "upgrade": True
 }
@@ -70,6 +70,7 @@ def save_config(cf):
 
 class Config:
     """存储登录用户信息"""
+
     def __init__(self):
         self._users = {}
         self._cookie = ''
@@ -78,7 +79,8 @@ class Config:
         self._work_id = -1
         self._settings = default_settings
 
-    def encode(self, var):
+    @staticmethod
+    def encode(var):
         if isinstance(var, dict):
             for k, v in var.items():
                 var[k] = encrypt(KEY, str(v))
@@ -86,7 +88,8 @@ class Config:
             var = encrypt(KEY, str(var))
         return var
 
-    def decode(self, var):
+    @staticmethod
+    def decode(var):
         try:
             if isinstance(var, dict):
                 dvar = {}  # 新开内存，否则会修改原字典
@@ -136,7 +139,7 @@ class Config:
         en_name = self.encode(name)
         if en_name in self._users:
             user_info = self._users[en_name]
-            return (name, self.decode(user_info[2]), self.decode(user_info[0]))
+            return name, self.decode(user_info[2]), self.decode(user_info[0])
 
     def default_path(self):
         path = default_settings['dl_path']

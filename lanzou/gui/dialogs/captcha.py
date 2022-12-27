@@ -1,9 +1,11 @@
 import os
+
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (QLineEdit, QDialog, QLabel, QDialogButtonBox, QVBoxLayout)
 
 from lanzou.gui.qss import others_style, btn_style
+
 
 class CaptchaDialog(QDialog):
     captcha = pyqtSignal(object)
@@ -42,7 +44,8 @@ class CaptchaDialog(QDialog):
 
         self.buttonBox = QDialogButtonBox()
         self.buttonBox.setOrientation(Qt.Orientation.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Reset|QDialogButtonBox.StandardButton.Ok|QDialogButtonBox.StandardButton.Close)
+        self.buttonBox.setStandardButtons(
+            QDialogButtonBox.StandardButton.Reset | QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close)
         self.buttonBox.button(QDialogButtonBox.StandardButton.Reset).setText("显示图片")
         self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setText("确定")
         self.buttonBox.button(QDialogButtonBox.StandardButton.Close).setText("关闭")

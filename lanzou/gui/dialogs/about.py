@@ -1,10 +1,10 @@
 from PyQt6.QtCore import Qt, pyqtSignal, QLine, QPoint, PYQT_VERSION_STR, QT_VERSION_STR
-from PyQt6.QtGui import  QPixmap, QPainter, QPen
+from PyQt6.QtGui import QPixmap, QPainter, QPen
 from PyQt6.QtWidgets import (QPushButton, QDialog, QLabel, QFormLayout,
-                             QDialogButtonBox, QVBoxLayout, QHBoxLayout)
+                             QDialogButtonBox, QVBoxLayout)
 
-from lanzou.gui.qss import others_style, btn_style
 from lanzou.debug import SRC_DIR
+from lanzou.gui.qss import others_style, btn_style
 
 
 class AboutDialog(QDialog):
@@ -40,7 +40,7 @@ class AboutDialog(QDialog):
         self.setWindowTitle("关于 lanzou-gui")
         about = f'本项目使用PyQt6实现图形界面，可以完成蓝奏云的大部分功能<br/> \
     得益于 <a href="{self._api_url}">API</a> 的功能，可以间接突破单文件最大 100MB 的限制，同时增加了批量上传/下载的功能<br/> \
-Python 依赖见<a href="{self._github }/blob/master/requirements.txt">requirements.txt</a>，\
+Python 依赖见<a href="{self._github}/blob/master/requirements.txt">requirements.txt</a>，\
 <a href="{self._github}/releases">releases</a> 有打包好了的 Windows 可执行程序，但可能不是最新的'
         project_url = f'<a href="{self._home_page}">主页</a> | <a href="{self._github}">repo</a> | \
                         <a href="{self._gitee}">mirror repo</a>'

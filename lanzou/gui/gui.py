@@ -1,6 +1,6 @@
-import sys
 import os
 import re
+import sys
 from logging import getLevelName, DEBUG, ERROR
 
 from PyQt6.QtCore import Qt, QCoreApplication, QTimer, QUrl, QSize
@@ -9,23 +9,21 @@ from PyQt6.QtWidgets import (QApplication, QAbstractItemView, QHeaderView, QMenu
                              QPushButton, QFileDialog, QMessageBox, QSystemTrayIcon)
 
 from lanzou.api import LanZouCloud
-from lanzou.api.utils import time_format
-from lanzou.api.utils import convert_file_size_to_int as format_size_int
 from lanzou.api.models import FolderList
 from lanzou.api.types import RecFolder, FolderDetail, ShareItem
-
-from lanzou.gui.models import DlJob, Tasks, FileInfos, FolderInfos, ShareFileInfos
-from lanzou.gui.ui import Ui_MainWindow
-from lanzou.gui.others import set_file_icon, TableDelegate
-from lanzou.gui.others import MyStandardItem as QStandardItem
+from lanzou.api.utils import convert_file_size_to_int as format_size_int
+from lanzou.api.utils import time_format
+from lanzou.debug import logger, USER_HOME, SRC_DIR
+from lanzou.gui import version
 from lanzou.gui.config import config
+from lanzou.gui.dialogs import *
+from lanzou.gui.models import DlJob, Tasks, FileInfos, FolderInfos, ShareFileInfos
+from lanzou.gui.others import MyStandardItem as QStandardItem
+from lanzou.gui.others import set_file_icon, TableDelegate
+from lanzou.gui.qss import *
+from lanzou.gui.ui import Ui_MainWindow
 from lanzou.gui.workers import *
 from lanzou.gui.workers.manager import change_size_unit
-from lanzou.gui.dialogs import *
-from lanzou.gui.qss import *
-from lanzou.gui import version
-from lanzou.debug import logger, USER_HOME, SRC_DIR
-
 
 __ALL__ = ['MainWindow']
 
@@ -124,7 +122,7 @@ class MainWindow(Ui_MainWindow):
     def init_variables(self):
         self._disk = LanZouCloud()
         self._config = config
-        self._user = None    # 当前登录用户名
+        self._user = None  # 当前登录用户名
         self._folder_list = {}  # disk 工作目录文件夹
         self._file_list = {}  # disk 工作目录文件
         self._extract_folder_list = {}  # share 提取子文件夹
@@ -136,7 +134,7 @@ class MainWindow(Ui_MainWindow):
         self._locs = {}
         self._parent_id = -1  # --> ..
         self._work_name = ""  # share disk rec, not use now
-        self._work_id = -1    # disk folder id
+        self._work_id = -1  # disk folder id
         self._old_work_id = self._work_id  # 用于上传完成后判断是否需要更新disk界面
         self._show_to_tray_msg = True
         self._created_tray = False
@@ -319,7 +317,7 @@ class MainWindow(Ui_MainWindow):
             self.show_toolbar.setText("显示工具栏")
         else:
             self.toolbar.show()
-            self.toolbar.setIconSize(QSize(20,20))
+            self.toolbar.setIconSize(QSize(20, 20))
             self.show_toolbar.setText("关闭工具栏")
 
     def show_login_dialog(self):
@@ -756,6 +754,7 @@ class MainWindow(Ui_MainWindow):
 
     def call_change_dir(self, folder_id=-1):
         """顶部路径按钮调用"""
+
         def callfunc():
             self.list_refresher.set_values(folder_id)
 
@@ -983,7 +982,7 @@ class MainWindow(Ui_MainWindow):
                 else:
                     root_path = [infos.folder.url, ]
                     pre_root_dir = ''
-                    post_root_dir = [sub_folder.folder.name,]
+                    post_root_dir = [sub_folder.folder.name, ]
                 if sub_folder.folder.desc:
                     text = ' <span style="font-size:14px;color:green;text-align:right">{}</span>'.format(
                         sub_folder.folder.desc.replace("\n", " "))
@@ -994,7 +993,7 @@ class MainWindow(Ui_MainWindow):
                     name.setData(set_data)
                     name.setText(pre_root_dir + sub_folder.folder.name + text)
                     if self.time_fmt:
-                        time = QStandardItem(time_format(sub_folder.folder.time)) 
+                        time = QStandardItem(time_format(sub_folder.folder.time))
                     else:
                         time = QStandardItem(sub_folder.folder.time)
                     size = QStandardItem(sub_folder.folder.size)
@@ -1031,8 +1030,10 @@ class MainWindow(Ui_MainWindow):
                 self.model_share.appendRow([name, QStandardItem(infos.size), QStandardItem(time)])
                 self.model_share.setHorizontalHeaderLabels(["文件名", "大小", "时间"])
             for r in range(self.model_share.rowCount()):  # 右对齐
-                self.model_share.item(r, 1).setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-                self.model_share.item(r, 2).setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+                self.model_share.item(r, 1).setTextAlignment(
+                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+                self.model_share.item(r, 2).setTextAlignment(
+                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self.table_share.setDisabled(False)
             self.btn_share_select_all.setDisabled(False)
             self.btn_share_select_all.setToolTip("按下 Ctrl/Alt + A 全选或则取消全选")
@@ -1057,7 +1058,7 @@ class MainWindow(Ui_MainWindow):
 
     def change_share_dir(self, dir_name):
         """双击子文件夹改变路径"""
-        all_infos = self.model_share.item(dir_name.row(), 0).data() # 
+        all_infos = self.model_share.item(dir_name.row(), 0).data()  #
         if self.model_share.item(dir_name.row(), 0).text() == "..":  # 返回父文件夹
             if self._extract_show_dir:
                 self.model_share.removeRows(0, self.model_share.rowCount())
@@ -1098,7 +1099,8 @@ class MainWindow(Ui_MainWindow):
                 self._share_url_show_subfolder.deleteLater()
                 self._share_url_show_subfolder = None
                 del self._share_url_show_subfolder
-        except: pass
+        except:
+            pass
 
     def init_extract_share_ui(self):
         self.btn_share_select_all.setDisabled(True)
@@ -1117,7 +1119,8 @@ class MainWindow(Ui_MainWindow):
         self.get_shared_info_thread.update.connect(lambda: self.line_share_pwd.setEnabled(True))
         self.table_share.doubleClicked.connect(self.change_share_dir)  # 双击
         # 控件设置
-        self.line_share_url.setPlaceholderText("蓝奏云链接，如有提取码，放后面，空格或汉字等分割(汉字、特殊符号提取码手动右侧输入！)，回车键提取")
+        self.line_share_url.setPlaceholderText(
+            "蓝奏云链接，如有提取码，放后面，空格或汉字等分割(汉字、特殊符号提取码手动右侧输入！)，回车键提取")
         self.line_share_url.returnPressed.connect(self.call_get_shared_info)
         self.line_share_url.setFocus()  # 光标焦点
         self.line_share_pwd.setPlaceholderText("特殊提取码")
@@ -1198,11 +1201,11 @@ class MainWindow(Ui_MainWindow):
             if task.type == 'dl':
                 name.setIcon(download_ico)
                 txt = task.name + '  ' + path_style + task.size + '|' + task.speed + '|' + task.prog \
-                    + ' ➩ ' + task.path + "</span>"
+                      + ' ➩ ' + task.path + "</span>"
             else:
                 name.setIcon(upload_ico)
                 txt = str(task.url[-100:]) + '  ' + path_style + change_size_unit(task.total_size) + '|' \
-                    + task.speed + '|' + task.prog + ' ➩ ' + str(task.folder) + "</span>"
+                      + task.speed + '|' + task.prog + ' ➩ ' + str(task.folder) + "</span>"
             if task.info:
                 txt = txt + error_style + str(task.info) + "</span>"
             name.setText(txt)

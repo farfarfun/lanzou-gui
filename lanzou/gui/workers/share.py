@@ -1,8 +1,9 @@
 import re
+
 from PyQt6.QtCore import QThread, pyqtSignal, QMutex
 
-from lanzou.api.utils import is_folder_url, is_file_url
 from lanzou.api import LanZouCloud
+from lanzou.api.utils import is_folder_url, is_file_url
 from lanzou.debug import logger
 
 
@@ -55,7 +56,7 @@ class GetSharedInfo(QThread):
                 self.pwd = pwd
             else:  # 一个或两个汉字的提取码
                 pwd_ = text.split(' ')[-1].split('：')[-1].split(':')[-1]
-                self.pwd = pwd_ if 1<= len(pwd_) <= 2  else ''
+                self.pwd = pwd_ if 1 <= len(pwd_) <= 2 else ''
             self.is_file = is_file
             self.is_folder = is_folder
             self.start()
@@ -77,7 +78,8 @@ class GetSharedInfo(QThread):
         elif infos.code == LanZouCloud.URL_INVALID:
             self.msg.emit("<font color='red'>链接非法！</font>", show_time)
         elif infos.code == LanZouCloud.PASSWORD_ERROR:
-            self.msg.emit(f"<font color='red'>提取码 [<b><font color='magenta'>{self.pwd}</font></b>] 错误！</font>", show_time)
+            self.msg.emit(f"<font color='red'>提取码 [<b><font color='magenta'>{self.pwd}</font></b>] 错误！</font>",
+                          show_time)
         elif infos.code == LanZouCloud.LACK_PASSWORD:
             self.msg.emit("<font color='red'>请在链接后面跟上提取码，空格分割！</font>", show_time)
         elif infos.code == LanZouCloud.NETWORK_ERROR:

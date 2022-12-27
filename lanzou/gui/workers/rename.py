@@ -1,5 +1,7 @@
 from time import sleep
+
 from PyQt6.QtCore import QThread, pyqtSignal, QMutex
+
 from lanzou.api import LanZouCloud
 from lanzou.debug import logger
 
@@ -68,7 +70,7 @@ class RenameMkdirWorker(QThread):
                             else:
                                 failed = True
                         else:  # 修改文件夹，action == "folder"
-                            name = info.new_name or info.nmae 
+                            name = info.new_name or info.nmae
                             res = self._disk._set_dir_info(info.id, str(name), str(info.new_des))
                             if res == LanZouCloud.SUCCESS:
                                 has_folder = True

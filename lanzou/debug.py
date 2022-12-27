@@ -1,13 +1,11 @@
-'''
+"""
 调试日志设置，全局常量
-'''
+"""
 
-import os
 import logging
+import os
 
-
-__all__ = ['logger']
-
+__all__ = ['logger', 'SRC_DIR', 'CONFIG_FILE', 'DL_DIR', 'BG_IMG', 'USER_HOME']
 
 # 全局常量: USER_HOME, DL_DIR, SRC_DIR, BG_IMG, CONFIG_FILE
 USER_HOME = os.path.expanduser('~')
@@ -29,7 +27,6 @@ else:  # Linux and MacOS ...
 SRC_DIR = root_dir + os.sep + "src" + os.sep
 BG_IMG = (SRC_DIR + "default_background_img.jpg").replace('\\', '/')
 CONFIG_FILE = root_dir + os.sep + 'config.pkl'
-
 
 # 日志设置
 log_file = root_dir + os.sep + 'debug-lanzou-gui.log'

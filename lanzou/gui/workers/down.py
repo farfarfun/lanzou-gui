@@ -1,12 +1,12 @@
-from PyQt6.QtCore import QThread, pyqtSignal, QMutex
+from PyQt6.QtCore import QThread, pyqtSignal
 
-from lanzou.api.utils import is_folder_url, is_file_url
 from lanzou.api import why_error
+from lanzou.api.utils import is_folder_url, is_file_url
 from lanzou.debug import logger
 
 
 class Downloader(QThread):
-    '''单个文件下载线程'''
+    """单个文件下载线程"""
     finished_ = pyqtSignal(object)
     folder_file_failed = pyqtSignal(object, object)
     failed = pyqtSignal()
@@ -63,6 +63,7 @@ class Downloader(QThread):
             self._task.info = f"未知错误！err={err}"
             logger.error(f"Download error: err={err}")
             self.failed.emit()
-        except UserWarning: pass
+        except UserWarning:
+            pass
         self._task.run = False
         self.finished_.emit(self._task)

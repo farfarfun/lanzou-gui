@@ -101,7 +101,6 @@ class LanZouCloud(object):
         ]
         return [url.replace('lanzouo.com', d) for d in available_domains]
 
-
     def set_max_size(self, max_size=100) -> int:
         """设置单文件大小限制(会员用户可超过 100M)"""
         if max_size < 1:
@@ -125,7 +124,8 @@ class LanZouCloud(object):
         login_data = {"task": "3", "setSessionId": "", "setToken": "", "setSig": "",
                       "setScene": "", "uid": username, "pwd": passwd}
         phone_header = {
-            "User-Agent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/82.0.4051.0 Mobile Safari/537.36"}
+            "User-Agent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/82.0.4051.0 Mobile Safari/537.36"}
         html = self._get(self._account_url)
         if not html:
             return LanZouCloud.NETWORK_ERROR
@@ -447,6 +447,19 @@ class LanZouCloud(object):
                     return LanZouCloud.FAILED
         return LanZouCloud.SUCCESS
 
+    def get_full_path(self, folder_id=-1) -> FolderList:
+        """获取文件夹完整路径"""
+        path_list = FolderList()
+        path_list.append(FolderId('LanZouCloud', -1))
+        post_data = {'task': 47, 'folder_id': folder_id}
+        resp = self._post(self._doupload_url, post_data)
+        if not resp:
+            return path_list
+        for folder in resp.json()['info']:
+            if folder['folderid'] and folder['name']:  # 有时会返回无效数据, 这两个字段中某个为 None
+                path_list.append(FolderId(id=int(folder['folderid']), name=folder['name']))
+        return path_list
+
     def get_file_info_by_url(self, share_url, pwd='') -> FileDetail:
         """获取文件各种信息(包括下载直链)
         :param share_url: 文件分享链接
@@ -492,7 +505,7 @@ class LanZouCloud(object):
             second_page = remove_notes(second_page.text)
             # 提取文件信息
             f_name = link_info['inf'].replace("*", "_")
-            f_size = re.search(r'大小.+?(\d[\d\.,]+\s?[BKM]?)<', second_page)
+            f_size = re.search(r'大小.+?(\d[\d.,]+\s?[BKM]?)<', second_page)
             f_size = f_size.group(1) if f_size else ''
             f_time = re.search(r'class="n_file_infos">(.+?)</span>', second_page)
             f_time = f_time.group(1) if f_time else ''
@@ -511,10 +524,11 @@ class LanZouCloud(object):
 
             f_name = f_name.group(1).replace("*", "_") if f_name else "未匹配到文件名"
 
-            f_time = re.search(r'>(\d+\s?[秒天分小][钟时]?前|[昨前]天\s?[\d:]+?|\d+\s?天前|\d{4}-\d\d-\d\d)<', first_page)
+            f_time = re.search(r'>(\d+\s?[秒天分小][钟时]?前|[昨前]天\s?[\d:]+?|\d+\s?天前|\d{4}-\d\d-\d\d)<',
+                               first_page)
             f_time = f_time.group(1) if f_time else ''
 
-            f_size = re.search(r'大小.+?(\d[\d\.,]+\s?[BKM]?)<', first_page) or \
+            f_size = re.search(r'大小.+?(\d[\d.,]+\s?[BKM]?)<', first_page) or \
                      re.search(r'大小：(.+?)</div>', first_page)  # VIP 分享页面
             f_size = f_size.group(1) if f_size else ''
             f_desc = re.search(r'文件描述.+?</span><br>\n?\s*(.*?)\s*</td>', first_page)
@@ -522,7 +536,8 @@ class LanZouCloud(object):
             first_page = self._get(self._host_url + para)
             logger.info(f"get_file_info_by_url else first_page={first_page.text}")
             if not first_page:
-                return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time, size=f_size, desc=f_desc, pwd=pwd, url=share_url)
+                return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time,
+                                  size=f_size, desc=f_desc, pwd=pwd, url=share_url)
             first_page = remove_notes(first_page.text)
             # 一般情况 sign 的值就在 data 里，有时放在变量后面
             sign = re.search(r"'sign':(.+?),", first_page).group(1)
@@ -544,7 +559,8 @@ class LanZouCloud(object):
 
             link_info = self._post(self._host_url + '/ajaxm.php', post_data)
             if not link_info:
-                return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time, size=f_size, desc=f_desc, pwd=pwd, url=share_url)
+                return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time, size=f_size, desc=f_desc,
+                                  pwd=pwd, url=share_url)
             link_info = link_info.json()
 
         # 这里开始获取文件直链
@@ -752,7 +768,7 @@ class LanZouCloud(object):
             return LanZouCloud.NETWORK_ERROR
         return LanZouCloud.SUCCESS if result.json()['zt'] == 1 else LanZouCloud.FAILED
 
-    def move_folder(self, folder_id: int, parent_folder_id: int=-1) -> int:
+    def move_folder(self, folder_id: int, parent_folder_id: int = -1) -> int:
         """移动文件夹(官方并没有直接支持此功能)"""
         if folder_id == parent_folder_id or parent_folder_id < -1:
             return LanZouCloud.FAILED  # 禁止移动文件夹到自身，禁止移动到 -2 这样的文件夹(文件还在,但是从此不可见)
@@ -915,7 +931,8 @@ class LanZouCloud(object):
         logger.debug(f"Upload finished, Delete tmp folder:{tmp_dir}")
         return LanZouCloud.SUCCESS, int(dir_id), False  # 大文件返回文件夹id
 
-    def upload_file(self, task: object, file_path, folder_id=-1, callback=None, allow_big_file=False) -> Tuple[int, int, bool]:
+    def upload_file(self, task: object, file_path, folder_id=-1, callback=None, allow_big_file=False) -> Tuple[
+        int, int, bool]:
         """解除限制上传文件"""
         if not os.path.isfile(file_path):
             return LanZouCloud.PATH_ERROR, 0, True
@@ -927,7 +944,7 @@ class LanZouCloud(object):
             return self._upload_small_file(task, file_path, folder_id, callback)
         elif not allow_big_file:
             logger.debug(f'Forbid upload big file！file_path={file_path}, max_size={self._max_size}')
-            task.info = f"文件大于{self._max_size}MB" # LanZouCloud.OFFICIAL_LIMITED
+            task.info = f"文件大于{self._max_size}MB"  # LanZouCloud.OFFICIAL_LIMITED
             return LanZouCloud.OFFICIAL_LIMITED, 0, False  # 不允许上传超过 max_size 的文件
 
         # 上传超过 max_size 的文件
@@ -1075,7 +1092,7 @@ class LanZouCloud(object):
             return FolderDetail(LanZouCloud.FILE_CANCELLED)
         if ('id="pwdload"' in html or 'id="passwddiv"' in html or '请输入密码' in html) and len(dir_pwd) == 0:
             return FolderDetail(LanZouCloud.LACK_PASSWORD)
-        
+
         if "acw_sc__v2" in html:
             # 在页面被过多访问或其他情况下，有时候会先返回一个加密的页面，其执行计算出一个acw_sc__v2后放入页面后再重新访问页面才能获得正常页面
             # 若该页面进行了js加密，则进行解密，计算acw_sc__v2，并加入cookie
@@ -1331,7 +1348,7 @@ class LanZouCloud(object):
         first_page = remove_notes(first_page.text)  # 去除网页里的注释
         if '文件取消' in first_page or '文件不存在' in first_page:
             return ShareInfo(LanZouCloud.FILE_CANCELLED)
-        if ('id="pwdload"' in first_page or 'id="passwddiv"' in first_page or "输入密码" in first_page):  # 文件设置了提取码时
+        if 'id="pwdload"' in first_page or 'id="passwddiv"' in first_page or "输入密码" in first_page:  # 文件设置了提取码时
             if len(pwd) == 0:
                 return ShareInfo(LanZouCloud.LACK_PASSWORD)
             f_size = re.search(r'class="n_filesize">[^<0-9]*([\.0-9 MKBmkbGg]+)<', first_page)
@@ -1357,7 +1374,8 @@ class LanZouCloud(object):
                     f_time = re.search(r'class="n_file_infos">(.+?)</span>', second_page)
                     f_time = f_time.group(1) if f_time else ""
 
-                return ShareInfo(LanZouCloud.SUCCESS, name=f_name, url=f_url, pwd=pwd, desc=f_desc, time=f_time, size=f_size)
+                return ShareInfo(LanZouCloud.SUCCESS, name=f_name, url=f_url, pwd=pwd, desc=f_desc, time=f_time,
+                                 size=f_size)
             else:
                 return ShareInfo(LanZouCloud.PASSWORD_ERROR)
         else:
@@ -1375,7 +1393,8 @@ class LanZouCloud(object):
             f_time = f_time.group(1) if f_time else ""
             f_desc = re.search(r'文件描述：</span><br>([^<]+)</td>', first_page)
             f_desc = f_desc.group(1).strip() if f_desc else ""
-            return ShareInfo(LanZouCloud.SUCCESS, name=f_name, url=f_url, pwd=pwd, desc=f_desc, time=f_time, size=f_size)
+            return ShareInfo(LanZouCloud.SUCCESS, name=f_name, url=f_url, pwd=pwd, desc=f_desc, time=f_time,
+                             size=f_size)
 
     def get_user_name(self):
         """获取用户名"""
@@ -1391,8 +1410,12 @@ if __name__ == "__main__":
     lanzou = LanZouCloud()
     # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8h93hi")
     # print(fileDetail)
-    # print("_______________")
+    # print("_______________https://leon.lanzoub.com/b00erfryd 提取码：6mbu")
     # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8rnc4d", "80nl")
-    # print(fileDetail)
-    fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
+    fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b00erfryd", "6mbu")
     print(fileDetail)
+    fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0dazruwd",
+                                               "1111")
+    print(fileDetail)
+    # fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
+    # print(fileDetail)

@@ -1,12 +1,12 @@
 from PyQt6.QtCore import QThread, pyqtSignal, QMutex
-from lanzou.api import LanZouCloud
 
-from lanzou.gui.models import DlJob
+from lanzou.api import LanZouCloud
 from lanzou.debug import logger
+from lanzou.gui.models import DlJob
 
 
 class DescPwdFetcher(QThread):
-    '''获取描述与提取码 线程'''
+    """获取描述与提取码 线程"""
     desc = pyqtSignal(object)
     tasks = pyqtSignal(object)
     msg = pyqtSignal(object, object)

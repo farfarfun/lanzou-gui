@@ -1,5 +1,7 @@
 import os
-from PyQt6.QtCore import QThread, pyqtSignal, QMutex
+
+from PyQt6.QtCore import QThread, pyqtSignal
+
 from lanzou.api import LanZouCloud
 from lanzou.debug import logger
 

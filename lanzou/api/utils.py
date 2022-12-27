@@ -5,21 +5,19 @@ API 处理网页数据、数据切片时使用的工具
 import os
 import pickle
 import re
-from typing import Tuple
 from datetime import timedelta, datetime
 from random import uniform, choices, sample, shuffle, choice
+from typing import Tuple
+
 import requests
 
 from lanzou.debug import logger
 
-
 __all__ = ['remove_notes', 'name_format', 'time_format', 'is_name_valid', 'is_file_url',
            'is_folder_url', 'big_file_split', 'un_serialize', 'let_me_upload', 'USER_AGENT',
-           'sum_files_size', 'convert_file_size_to_str', 'calc_acw_sc__v2']
-
+           'sum_files_size', 'convert_file_size_to_str', 'calc_acw_sc__v2', 'convert_file_size_to_int']
 
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0'
-
 
 headers = {
     'User-Agent': USER_AGENT,

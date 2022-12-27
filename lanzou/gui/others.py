@@ -1,8 +1,9 @@
-'''
+"""
 重新封装的控件
-'''
+"""
 
 import os
+
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize
 from PyQt6.QtGui import QTextDocument, QAbstractTextDocumentLayout, QPalette, QFontMetrics, QIcon, QStandardItem
 from PyQt6.QtWidgets import (QApplication, QAbstractItemView, QStyle, QListView, QLineEdit, QTableView,
@@ -162,11 +163,11 @@ class AutoResizingTextEdit(QTextEdit):
 
         # font_metrics.lineSpacing() is ignored because it seems to be already included in font_metrics.height()
         return (
-            widget_margins.top() +
-            document_margin +
-            max(num_lines, 1) * font_metrics.height() +
-            self.document().documentMargin() +
-            widget_margins.bottom()
+                widget_margins.top() +
+                document_margin +
+                max(num_lines, 1) * font_metrics.height() +
+                self.document().documentMargin() +
+                widget_margins.bottom()
         )
 
     def focusOutEvent(self, event):
@@ -180,6 +181,7 @@ class AutoResizingTextEdit(QTextEdit):
 
 class TableDelegate(QStyledItemDelegate):
     """Table 富文本"""
+
     def __init__(self, parent=None):
         super(TableDelegate, self).__init__(parent)
         self.doc = QTextDocument(self)

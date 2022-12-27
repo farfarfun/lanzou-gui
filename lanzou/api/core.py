@@ -4,7 +4,6 @@
 
 import os
 import pickle
-import re
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -18,6 +17,7 @@ from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
 
 from lanzou.api.models import FileList
+from lanzou.api.parser import *
 from lanzou.api.types import *
 from lanzou.api.utils import *
 from lanzou.debug import logger
@@ -129,7 +129,7 @@ class LanZouCloud(object):
         html = self._get(self._account_url)
         if not html:
             return LanZouCloud.NETWORK_ERROR
-        formhash = re.findall(r'name="formhash" value="(.+?)"', html.text)
+        formhash = parse_form_hash(html.text)
         if not formhash:
             logger.error("formhash is None!")
             return LanZouCloud.FAILED
@@ -179,7 +179,7 @@ class LanZouCloud(object):
         html = self._get(self._mydisk_url, params={'item': 'recycle', 'action': 'files'})
         if not html:
             return LanZouCloud.NETWORK_ERROR
-        post_data['formhash'] = re.findall(r'name="formhash" value="(.+?)"', html.text)[0]  # 设置表单 hash
+        post_data['formhash'] = parse_form_hash(html.text)
         html = self._post(self._mydisk_url + '?item=recycle', post_data)
         if not html:
             return LanZouCloud.NETWORK_ERROR
@@ -287,7 +287,7 @@ class LanZouCloud(object):
         if not html:
             return LanZouCloud.NETWORK_ERROR
         # 此处的 formhash 与 login 时不同，不要尝试精简这一步
-        post_data['formhash'] = re.findall(r'name="formhash" value="(\w+?)"', html.text)[0]  # 设置表单 hash
+        post_data['formhash'] = parse_form_hash(html.text)
         html = self._post(self._mydisk_url + '?item=recycle', post_data)
         if not html:
             return LanZouCloud.NETWORK_ERROR
@@ -307,7 +307,7 @@ class LanZouCloud(object):
         html = self._get(self._mydisk_url, params=para)
         if not html:
             return LanZouCloud.NETWORK_ERROR
-        post_data['formhash'] = re.findall(r'name="formhash" value="(\w+?)"', html.text)[0]  # 设置表单 hash
+        post_data['formhash'] = parse_form_hash(html.text)
         html = self._post(self._mydisk_url + '?item=recycle', post_data)
         if not html:
             return LanZouCloud.NETWORK_ERROR
@@ -324,7 +324,7 @@ class LanZouCloud(object):
         html = self._get(self._mydisk_url, params=para)
         if not html:
             return LanZouCloud.NETWORK_ERROR
-        post_data['formhash'] = re.findall(r'name="formhash" value="(\w+?)"', html.text)[0]  # 设置表单 hash
+        post_data['formhash'] = parse_form_hash(html.text)
         html = self._post(self._mydisk_url + '?item=recycle', post_data)
         if not html:
             return LanZouCloud.NETWORK_ERROR
@@ -343,7 +343,8 @@ class LanZouCloud(object):
         html = self._get(self._mydisk_url, params=para)
         if not html:
             return LanZouCloud.NETWORK_ERROR
-        post_data['formhash'] = re.findall(r'name="formhash" value="(.+?)"', html.text)[0]  # 设置表单 hash
+
+        post_data['formhash'] = parse_form_hash(html.text)
         html = self._post(self._mydisk_url + '?item=recycle', post_data)
         if not html:
             return LanZouCloud.NETWORK_ERROR
@@ -356,7 +357,7 @@ class LanZouCloud(object):
         first_page = self._get(self._mydisk_url, params=para)
         if not first_page:
             return LanZouCloud.NETWORK_ERROR
-        post_data['formhash'] = re.findall(r'name="formhash" value="(.+?)"', first_page.text)[0]  # 设置表单 hash
+        post_data['formhash'] = parse_form_hash(first_page.text)
         second_page = self._post(self._mydisk_url + '?item=recycle', post_data)
         if not second_page:
             return LanZouCloud.NETWORK_ERROR
@@ -492,8 +493,8 @@ class LanZouCloud(object):
             if len(pwd) == 0:
                 return FileDetail(LanZouCloud.LACK_PASSWORD, pwd=pwd, url=share_url)  # 没给提取码直接退出
             # data : 'action=downprocess&sign=AGZRbwEwU2IEDQU6BDRUaFc8DzxfMlRjCjTPlVkWzFSYFY7ATpWYw_c_c&p='+pwd,
-            sign = re.search(r"sign=(\w+?)&", first_page)
-            sign = sign.group(1) if sign else ""
+            print("!!!!!!!!!!!!!!!!!!!!")
+            sign = parse_sign(first_page)
             post_data = {'action': 'downprocess', 'sign': sign, 'p': pwd}
             logger.error(f"get_file_info_by_url post_data={post_data}")
             link_info = self._post(self._host_url + '/ajaxm.php', post_data)  # 保存了重定向前的链接信息和文件名
@@ -505,44 +506,26 @@ class LanZouCloud(object):
             second_page = remove_notes(second_page.text)
             # 提取文件信息
             f_name = link_info['inf'].replace("*", "_")
-            f_size = re.search(r'大小.+?(\d[\d.,]+\s?[BKM]?)<', second_page)
-            f_size = f_size.group(1) if f_size else ''
-            f_time = re.search(r'class="n_file_infos">(.+?)</span>', second_page)
-            f_time = f_time.group(1) if f_time else ''
-            f_desc = re.search(r'class="n_box_des">(.*?)</div>', second_page)
-            f_desc = f_desc.group(1) if f_desc else ''
+            f_size = parse_file_size(second_page)
+            f_time = parse_time(second_page)
+            f_desc = parse_desc(second_page)
         else:  # 文件没有设置提取码时,文件信息都暴露在分享页面上
             para = re.search(r'<iframe class=.*?src="(.+?)"', first_page).group(1)  # 提取下载页面 URL 的参数
             logger.error(f"get_file_info_by_url else para={para}")
             # 文件名位置变化很多
-            f_name = re.search(r"<title>(.+?) - 蓝奏云</title>", first_page) or \
-                     re.search(r'<div class="filethetext".+?>([^<>]+?)</div>', first_page) or \
-                     re.search(r'<div style="font-size.+?>([^<>].+?)</div>', first_page) or \
-                     re.search(r"var filename = '(.+?)';", first_page) or \
-                     re.search(r'id="filenajax">(.+?)</div>', first_page) or \
-                     re.search(r'<div class="b"><span>([^<>]+?)</span></div>', first_page)
+            f_name = parse_file_name(first_page)
+            f_time = parse_time(first_page)
+            f_size = parse_file_size(first_page)
+            f_desc = parse_desc(first_page)
 
-            f_name = f_name.group(1).replace("*", "_") if f_name else "未匹配到文件名"
-
-            f_time = re.search(r'>(\d+\s?[秒天分小][钟时]?前|[昨前]天\s?[\d:]+?|\d+\s?天前|\d{4}-\d\d-\d\d)<',
-                               first_page)
-            f_time = f_time.group(1) if f_time else ''
-
-            f_size = re.search(r'大小.+?(\d[\d.,]+\s?[BKM]?)<', first_page) or \
-                     re.search(r'大小：(.+?)</div>', first_page)  # VIP 分享页面
-            f_size = f_size.group(1) if f_size else ''
-            f_desc = re.search(r'文件描述.+?</span><br>\n?\s*(.*?)\s*</td>', first_page)
-            f_desc = f_desc.group(1) if f_desc else ''
             first_page = self._get(self._host_url + para)
             logger.info(f"get_file_info_by_url else first_page={first_page.text}")
             if not first_page:
                 return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time,
                                   size=f_size, desc=f_desc, pwd=pwd, url=share_url)
             first_page = remove_notes(first_page.text)
-            # 一般情况 sign 的值就在 data 里，有时放在变量后面
-            sign = re.search(r"'sign':(.+?),", first_page).group(1)
-            if len(sign) < 20:  # 此时 sign 保存在变量里面, 变量名是 sign 匹配的字符
-                sign = re.search(rf"var {sign}\s*=\s*'(.+?)';", first_page).group(1)
+            sign = parse_sign(first_page)
+            print("无密码 sign::", sign)
             post_data = {'action': 'downprocess', 'sign': sign, 'ves': 1}
             # 某些特殊情况 share_url 会出现 webpage 参数, post_data 需要更多参数
             # https://github.com/zaxtyson/LanZouCloud-API/issues/74
@@ -805,19 +788,8 @@ class LanZouCloud(object):
         """绕过格式限制上传不超过 max_size 的文件"""
         if not os.path.isfile(file_path):
             return LanZouCloud.PATH_ERROR, 0, True
-
-        need_delete = False  # 上传完成是否删除
-        if not is_name_valid(os.path.basename(file_path)):  # 不允许上传的格式
-            file_path = let_me_upload(file_path)  # 添加了报尾的新文件
-            need_delete = True
-
         # 文件已经存在同名文件就删除
-        filename = name_format(os.path.basename(file_path))
-        file_list = self.get_file_list(folder_id)
-        if file_list.find_by_name(filename):
-            self.delete(file_list.find_by_name(filename).id)
-        logger.debug(f'Upload file file_path={file_path} to folder_id={folder_id}')
-
+        filename = name_format(os.path.basename(file_path)) + ".enc"
         file = open(file_path, 'rb')
         post_data = {
             "task": "1",
@@ -864,8 +836,6 @@ class LanZouCloud(object):
 
         file_id = result["text"][0]["id"]
         self.set_passwd(file_id)  # 文件上传后默认关闭提取码
-        if need_delete:
-            os.remove(file_path)
         file.close()
         return LanZouCloud.SUCCESS, int(file_id), True
 
@@ -1109,17 +1079,10 @@ class LanZouCloud(object):
             t = re.findall(r"var \w{6} = '(\d{10})';", html)[0]
             k = re.findall(r"var \w{6} = '([0-9a-z]{15,})';", html)[0]
             # 文件夹的信息
-            folder_id = re.findall(r"'fid':'?(\d+)'?,", html)[0]
-            folder_name = re.search(r"var.+?='(.+?)';\n.+document.title", html) or \
-                          re.search(r'user-title">(.+?)</div>', html) or \
-                          re.search(r'<div class="b">(.+?)<div', html)  # 会员自定义
-            folder_name = folder_name.group(1) if folder_name else ''
-            folder_time = re.search(r'class="rets">([\d\-]+?)<a', html)  # 日期不全 %m-%d
-            folder_time = folder_time.group(1) if folder_time else ''
-            folder_desc = re.search(r'id="filename">(.+?)</span>', html, re.DOTALL) or \
-                          re.search(r'<div class="user-radio-\d"></div>(.+?)</div>', html) or \
-                          re.search(r'class="teta tetb">说</span>(.+?)</div><div class="d2">', html, re.DOTALL)
-            folder_desc = folder_desc.group(1) if folder_desc else ''
+            folder_id = parse_folder_id(html)
+            folder_name = parse_folder_name(html)
+            folder_time = parse_folder_time(html)
+            folder_desc = parse_folder_desc(html)
         except IndexError:
             logger.error("IndexError")
             return FolderDetail(LanZouCloud.FAILED)
@@ -1351,13 +1314,11 @@ class LanZouCloud(object):
         if 'id="pwdload"' in first_page or 'id="passwddiv"' in first_page or "输入密码" in first_page:  # 文件设置了提取码时
             if len(pwd) == 0:
                 return ShareInfo(LanZouCloud.LACK_PASSWORD)
-            f_size = re.search(r'class="n_filesize">[^<0-9]*([\.0-9 MKBmkbGg]+)<', first_page)
-            f_size = f_size.group(1) if f_size else ""
-            f_time = re.search(r'class="n_file_infos">([-0-9 :月天小时分钟秒前]+)<', first_page)
-            f_time = f_time.group(1) if f_time else ""
-            f_desc = re.search(r'class="n_box_des">(.*)<', first_page)
-            f_desc = f_desc.group(1) if f_desc else ""
-            sign = re.search(r"sign=(\w+?)&", first_page).group(1)
+
+            f_size = parse_file_size(first_page)
+            f_time = parse_time(first_page)
+            f_desc = parse_desc(first_page)
+            sign = parse_sign(first_page)
             post_data = {'action': 'downprocess', 'sign': sign, 'p': pwd}
             link_info = self._post(self._host_url + '/ajaxm.php', post_data)  # 保存了重定向前的链接信息和文件名
             second_page = self._get(f_url)  # 再次请求文件分享页面，可以看见文件名，时间，大小等信息(第二页)
@@ -1368,31 +1329,18 @@ class LanZouCloud(object):
             if link_info["zt"] == 1:
                 f_name = link_info['inf'].replace("*", "_")
                 if not f_size:
-                    f_size = re.search(r'大小：(.+?)</div>', second_page)
-                    f_size = f_size.group(1) if f_size else ""
+                    f_size = parse_file_size(second_page)
                 if not f_time:
-                    f_time = re.search(r'class="n_file_infos">(.+?)</span>', second_page)
-                    f_time = f_time.group(1) if f_time else ""
-
+                    f_time = parse_time(second_page)
                 return ShareInfo(LanZouCloud.SUCCESS, name=f_name, url=f_url, pwd=pwd, desc=f_desc, time=f_time,
                                  size=f_size)
             else:
                 return ShareInfo(LanZouCloud.PASSWORD_ERROR)
         else:
-            f_name = re.search(r"<title>(.+?) - 蓝奏云</title>", first_page) or \
-                     re.search(r'<div class="filethetext".+?>([^<>]+?)</div>', first_page) or \
-                     re.search(r'<div style="font-size.+?>([^<>].+?)</div>', first_page) or \
-                     re.search(r"var filename = '(.+?)';", first_page) or \
-                     re.search(r'id="filenajax">(.+?)</div>', first_page) or \
-                     re.search(r'<div class="b"><span>([^<>]+?)</span></div>', first_page)
-            f_name = f_name.group(1) if f_name else "未匹配到文件名"
-
-            f_size = re.search(r'文件大小：</span>([\.0-9 MKBmkbGg]+)<br', first_page)
-            f_size = f_size.group(1) if f_size else ""
-            f_time = re.search(r'上传时间：</span>([-0-9 :月天小时分钟秒前]+)<br', first_page)
-            f_time = f_time.group(1) if f_time else ""
-            f_desc = re.search(r'文件描述：</span><br>([^<]+)</td>', first_page)
-            f_desc = f_desc.group(1).strip() if f_desc else ""
+            f_name = parse_file_name(first_page)
+            f_size = parse_file_size(first_page)
+            f_time = parse_time(first_page)
+            f_desc = parse_desc(first_page)
             return ShareInfo(LanZouCloud.SUCCESS, name=f_name, url=f_url, pwd=pwd, desc=f_desc, time=f_time,
                              size=f_size)
 
@@ -1408,14 +1356,24 @@ class LanZouCloud(object):
 
 if __name__ == "__main__":
     lanzou = LanZouCloud()
+    # # 文件夹解析
     # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8h93hi")
     # print(fileDetail)
-    # print("_______________https://leon.lanzoub.com/b00erfryd 提取码：6mbu")
-    # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8rnc4d", "80nl")
-    fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b00erfryd", "6mbu")
-    print(fileDetail)
-    fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0dazruwd",
-                                               "1111")
-    print(fileDetail)
-    # fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
+    # # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8rnc4d", "80nl")
+    # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b00erfryd", "6mbu")
     # print(fileDetail)
+    # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0dazruwd",
+    #                                            "1111")
+    # print(fileDetail)
+
+    # 文件解析
+    # 无密码文件
+    fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
+    print(fileDetail)
+    fileDetail = lanzou.get_share_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
+    print(fileDetail)
+    # 有密码文件
+    fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/ij31g0jiqieb", "6666")
+    print(fileDetail)
+    fileDetail = lanzou.get_share_info_by_url("https://leon.lanzoub.com/ij31g0jiqieb", "6666")
+    print(fileDetail)

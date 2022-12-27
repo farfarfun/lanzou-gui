@@ -7,7 +7,7 @@ from lanzou.debug import logger
 
 
 class Uploader(QThread):
-    '''单个文件上传线程'''
+    """单个文件上传线程"""
     finished_ = pyqtSignal(object)
     folder_file_failed = pyqtSignal(object, object)
     failed = pyqtSignal()

@@ -1,51 +1,55 @@
 import re
 import requests
-from random import choice
+import json
 
 from lanzou.api.utils import USER_AGENT
+from lanzou.debug import logger
 
 timeout = 2
+
+
+# 不登录一天
+short_url_server = "https://tturl.cn/api/buildDwz"
+
+short_url_server2 = "http://create.link66.cn/createBySingle"
+
 
 def get_short_url(url: str):
     """短链接生成器"""
     headers = {'User-Agent': USER_AGENT}
     short_url = ""
-    api_infos = ['http://xuewaurl.cn/user/info', 'http://yldwz.cn/user/info', 'http://knurl.cn/user/info']
-    apis = ['http://pay.jump-api.cn/tcn/web/test', 'http://pay.jump-api.cn/urlcn/web/test']  # 新浪、腾讯
     try:
-        http = requests.get(choice(api_infos), verify=False, headers=headers, timeout=timeout)
-        infos = http.json()
-
-        uid = infos["uid"]
-        username = infos["username"]
-        token = infos["token"]
-        site_id = infos["site_id"]
-        role = infos["role"]
-        fid = infos["fid"]
-
         post_data = {
-            "uid": uid,
-            "username": username,
-            "token": token,
-            "site_id": site_id,
-            "role": role,
-            "fid": fid,
-            "url_long": url
+            "url": url,
+            "type": 1
         }
-        for api in apis:
-            resp = requests.post(api, data=post_data, verify=False, headers=headers, timeout=timeout)
-            if resp.text.startswith('http'):
-                short_url = resp.text
-                break
-    except: pass
+
+        resp = requests.post(short_url_server, data=post_data, verify=False, headers=headers, timeout=timeout)
+        print(resp.text)
+        rsp = json.loads(resp.text)
+        if rsp:
+            short_url = rsp["data"][0]
+    except Exception as e:
+        logger.error(f"get_short_url error: e={e}")
 
     if not short_url:
-        chinaz_api = 'http://tool.chinaz.com/tools/dwz.aspx'
-        post_data = {"longurl":url, "aliasurl":""}
+        headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
+        post_data = {
+            "longUrl": url,
+            "domain": "1v9.xyz",
+            "expireType": 1
+        }
         try:
-            html = requests.post(chinaz_api, data=post_data, verify=False, headers=headers, timeout=timeout).text
-            short_url = re.findall('id="shorturl">(http[^<]*?)</span>', html)
-            if short_url:
-                short_url = short_url[0] 
-        except: pass
+            html = requests.post(short_url_server2, data=post_data,  verify=False, headers=headers, timeout=timeout).text
+            rsp = json.loads(html)
+            if rsp:
+                short_url = rsp["data"]
+        except Exception as e:
+            logger.error(f"get_short_url2 error: e={e}")
+
     return short_url
+
+
+if __name__ == "__main__":
+    url = get_short_url("https://github.com/Leon406/lanzou-gui")
+    print(url)

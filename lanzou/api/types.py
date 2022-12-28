@@ -22,4 +22,4 @@ FolderDetail = namedtuple('FolderDetail', ['code', 'folder', 'files', 'sub_folde
                           defaults=(0, FolderInfo(), FileInFolder(), FolderList()))
 
 # gui 提取界面 name.setData
-ShareItem = namedtuple('ShareItem', ['item', 'all', 'count', 'parrent'], defaults=('', None, 1, []))
+ShareItem = namedtuple('ShareItem', ['item', 'all', 'count', 'parent'], defaults=('', None, 1, []))

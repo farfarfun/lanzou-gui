@@ -386,11 +386,11 @@ class MainWindow(Ui_MainWindow):
             if first_item.all is None:  # 单文件信息链接 (info, None, 1, [])
                 info = first_item.item  # ShareInfo(code=0, name, url, pwd, desc, time, size)
                 tasks[info.url] = DlJob(infos=info, path=self._config.path, total_file=1)
-            elif len(infos) != 1 and len(infos) >= first_item.count:  # 下载整个文件夹文件 (info, all, count, parrent)
+            elif len(infos) != 1 and len(infos) >= first_item.count:  # 下载整个文件夹文件 (info, all, count, parent)
                 info = first_item.all.folder  # 当前文件夹信息
                 tasks[info.url] = DlJob(infos=info, path=self._config.path, total_file=first_item.count)
             else:  # 下载文件夹中部分文件
-                parent_dir_lst = first_item.parrent  # 父文件夹信息
+                parent_dir_lst = first_item.parent  # 父文件夹信息
                 parent_dir = os.sep.join(parent_dir_lst)
                 path = self._config.path + os.sep + parent_dir if parent_dir_lst else self._config.path
                 for info in infos:
@@ -1019,7 +1019,7 @@ class MainWindow(Ui_MainWindow):
                         sub_folder.folder.desc.replace("\n", " "))
                 else:
                     text = ''
-                set_data = ShareItem(item=sub_folder.folder, all=infos, count=self._extract_count, parrent=root_dir)
+                set_data = ShareItem(sub_folder.folder, infos, self._extract_count, root_dir)
                 if not show_dir:
                     name.setData(set_data)
                     name.setText(pre_root_dir + sub_folder.folder.name + text)
@@ -1043,7 +1043,7 @@ class MainWindow(Ui_MainWindow):
                 else:
                     pre_root_dir = ''
                 name = QStandardItem(set_file_icon(item.name), item.name)
-                name.setData(ShareItem(item=item, all=infos, count=self._extract_count, parrent=root_dir))
+                name.setData(ShareItem(item, infos, self._extract_count, root_dir))
                 name.setText(pre_root_dir + item.name)
                 size = QStandardItem(item.size)
                 size.setData(format_size_int(item.size), Qt.ItemDataRole.UserRole)

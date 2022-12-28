@@ -1,24 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import base64
-import configparser
-import datetime
-import glob
-import http.cookiejar
 import os
 import os.path
+import struct
 import sys
+import glob
+import http.cookiejar
+import json
 import tempfile
-import time
+import lz4.block
+import configparser
+import base64
+from io import BytesIO
+from Crypto.Cipher import AES
 from typing import Union
 
-import lz4.block
-from Crypto.Cipher import AES
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
 try:
     # should use pysqlite2 to read the cookies.sqlite on Windows
     # otherwise will raise the "sqlite3.DatabaseError: file is encrypted or is not a database" exception
@@ -27,11 +23,11 @@ except ImportError:
     import sqlite3
 
 # external dependencies
+import keyring
 import pyaes
 from pbkdf2 import PBKDF2
 
 __doc__ = 'Load browser cookies into a cookiejar'
-
 
 class BrowserCookieError(Exception):
     pass
@@ -46,7 +42,8 @@ def create_local_copy(cookie_file):
     if os.path.exists(cookie_file):
         # copy to random name in tmp folder
         tmp_cookie_file = tempfile.NamedTemporaryFile(suffix='.sqlite').name
-        open(tmp_cookie_file, 'wb').write(open(cookie_file, 'rb').read())
+        with open(tmp_cookie_file, "wb") as f1, open(cookie_file, "rb") as f2:
+            f1.write(f2.read())
         return tmp_cookie_file
     else:
         raise BrowserCookieError('Can not find cookie file at: ' + cookie_file)
@@ -108,16 +105,35 @@ def crypt_unprotect_data(
         return description, buffer_out.value
 
 
-def get_linux_pass(os_crypt_name):
-    '''Retrieve password used to encrypt cookies from libsecret.
-    '''
+def get_kde_wallet_password(os_crypt_name):
+    """Retrieve password used to encrypt cookies from KDE Wallet"""
+    import dbus
+
+    folder = f'{os_crypt_name.capitalize()} Keys'
+    key = f'{os_crypt_name.capitalize()} Safe Storage'
+    app_id = 'browser-cookie3'
+
+    kwalletd5_object = dbus.SessionBus().get_object('org.kde.kwalletd5', '/modules/kwalletd5', False)
+    kwalletd5 = dbus.Interface(kwalletd5_object, 'org.kde.KWallet')
+    handle = kwalletd5.open(kwalletd5.networkWallet(), dbus.Int64(0), app_id)
+    handle = dbus.Int32(handle)
+    if not kwalletd5.hasFolder(handle, folder, app_id):
+        raise RuntimeError(f'KDE Wallet folder {folder} not found.')
+    password = kwalletd5.readPassword(handle, folder, key, app_id)
+    kwalletd5.close(handle, False, app_id)
+    return password.encode('utf-8')
+
+
+def get_secretstorage_password(os_crypt_name):
+    """Retrieve password used to encrypt cookies from libsecret"""
     # https://github.com/n8henrie/pycookiecheat/issues/12
-    my_pass = None
 
     import secretstorage
+
     connection = secretstorage.dbus_init()
     collection = secretstorage.get_default_collection(connection)
     secret = None
+    my_pass = None
 
     # we should not look for secret with label. Sometimes label can be different. For example,
     # if Steam is installed before Chromium, Opera or Edge, it will show Steam Secret Storage as label.
@@ -136,35 +152,38 @@ def get_linux_pass(os_crypt_name):
         my_pass = secret.get_secret()
 
     connection.close()
-
-    # Try to get pass from keyring, which should support KDE / KWallet
-    if not my_pass:
-        try:
-            import keyring.backends.kwallet
-            keyring.set_keyring(keyring.backends.kwallet.DBusKeyring())
-            my_pass = keyring.get_password(
-                "{} Keys".format(os_crypt_name.capitalize()),
-                "{} Safe Storage".format(os_crypt_name.capitalize())
-            ).encode('utf-8')
-        except RuntimeError:
-            pass
-
-    # try default peanuts password, probably won't work
-    if not my_pass:
-        my_pass = 'peanuts'.encode('utf-8')
-
     return my_pass
 
 
-def __expand_win_path(path: Union[dict, str]):
-    if not isinstance(path, dict):
+def get_linux_pass(os_crypt_name):
+    try:
+        password = get_secretstorage_password(os_crypt_name)
+        if password is not None:
+            return password
+    except KeyboardInterrupt:
+        raise
+    except:
+        pass
+
+    try:
+        return get_kde_wallet_password(os_crypt_name)
+    except KeyboardInterrupt:
+        raise
+    except:
+        pass
+
+    # try default peanuts password, probably won't work
+    return b'peanuts'
+
+
+def __expand_win_path(path:Union[dict,str]):
+    if not isinstance(path,dict):
         path = {'path': path}
     return os.path.join(os.getenv(path['env'], ''), path['path'])
 
 
-def expand_paths(paths: list, os_name: str):
-    '''Expands user paths on Linux, OSX, and windows
-    '''
+def expand_paths_impl(paths:list, os_name:str):
+    """Expands user paths on Linux, OSX, and windows"""
 
     os_name = os_name.lower()
     assert os_name in ['windows', 'osx', 'linux']
@@ -177,15 +196,29 @@ def expand_paths(paths: list, os_name: str):
     else:
         paths = map(os.path.expanduser, paths)
 
-    paths = next(filter(os.path.exists, paths), None)
-    return paths
+    for path in paths:
+        for i in sorted(glob.glob(path)):   # glob will return results in arbitrary order. sorted() is use to make output predictable.
+            yield i                         # can use return here without using `expand_paths()` below.
+            # but using generator can be useful if we plan to parse all `Cookies` files later.
+
+
+def expand_paths(paths:list, os_name:str):
+    return next(expand_paths_impl(paths, os_name), None)
+
+
+def text_factory(data):
+    try:
+        return data.decode('utf-8')
+    except UnicodeDecodeError:
+        return data
 
 
 class ChromiumBased:
-    """Super class for all Chromium based browser.
-    """
+    """Super class for all Chromium based browsers"""
 
-    def __init__(self, browser: str, cookie_file=None, domain_name="", key_file=None, **kwargs):
+    UNIX_TO_NT_EPOCH_OFFSET = 11644473600  # seconds from 1601-01-01T00:00:00Z to 1970-01-01T00:00:00Z
+
+    def __init__(self, browser:str, cookie_file=None, domain_name="", key_file=None, **kwargs):
         self.salt = b'saltysalt'
         self.iv = b' ' * 16
         self.length = 16
@@ -200,9 +233,7 @@ class ChromiumBased:
                                   windows_keys=None, os_crypt_name=None, osx_key_service=None, osx_key_user=None):
 
         if sys.platform == 'darwin':
-            # running Chromium or it's derivatives on OSX
-            import keyring.backends.OS_X
-            keyring.set_keyring(keyring.backends.OS_X.Keyring())
+            # running Chromium or its derivatives on OSX
             my_pass = keyring.get_password(osx_key_service, osx_key_user)
 
             # try default peanuts password, probably won't work
@@ -211,31 +242,34 @@ class ChromiumBased:
             my_pass = my_pass.encode('utf-8')
 
             iterations = 1003  # number of pbkdf2 iterations on mac
-            self.key = PBKDF2(my_pass, self.salt,
-                              iterations=iterations).read(self.length)
+            self.v10_key = PBKDF2(my_pass, self.salt,
+                                  iterations=iterations).read(self.length)
 
-            cookie_file = self.cookie_file or expand_paths(osx_cookies, 'osx')
+            cookie_file = self.cookie_file or expand_paths(osx_cookies,'osx')
 
-        elif sys.platform.startswith('linux'):
+        elif sys.platform.startswith('linux') or 'bsd' in sys.platform.lower():
             my_pass = get_linux_pass(os_crypt_name)
 
             iterations = 1
-            self.key = PBKDF2(my_pass, self.salt,
-                              iterations=iterations).read(self.length)
+            self.v10_key = PBKDF2(b'peanuts', self.salt,
+                                  iterations=iterations).read(self.length)
+            self.v11_key = PBKDF2(my_pass, self.salt,
+                                  iterations=iterations).read(self.length)
 
             cookie_file = self.cookie_file or expand_paths(linux_cookies, 'linux')
 
+
         elif sys.platform == "win32":
-            key_file = self.key_file or expand_paths(windows_keys, 'windows')
+            key_file = self.key_file or expand_paths(windows_keys,'windows')
 
             if key_file:
-                with open(key_file, 'rb') as f:
+                with open(key_file,'rb') as f:
                     key_file_json = json.load(f)
                     key64 = key_file_json['os_crypt']['encrypted_key'].encode('utf-8')
 
                     # Decode Key, get rid of DPAPI prefix, unprotect data
                     keydpapi = base64.standard_b64decode(key64)[5:]
-                    _, self.key = crypt_unprotect_data(keydpapi, is_key=True)
+                    _, self.v10_key = crypt_unprotect_data(keydpapi, is_key=True)
 
             # get cookie file from APPDATA
 
@@ -245,7 +279,7 @@ class ChromiumBased:
                 if self.browser.lower() == 'chrome' and windows_group_policy_path():
                     cookie_file = windows_group_policy_path()
                 else:
-                    cookie_file = expand_paths(windows_cookies, 'windows')
+                    cookie_file = expand_paths(windows_cookies,'windows')
 
         else:
             raise BrowserCookieError(
@@ -265,39 +299,36 @@ class ChromiumBased:
         return self.browser
 
     def load(self):
-        """Load sqlite cookies into a cookiejar
-        """
+        """Load sqlite cookies into a cookiejar"""
         con = sqlite3.connect(self.tmp_cookie_file)
+        con.text_factory = text_factory
         cur = con.cursor()
         try:
             # chrome <=55
-            cur.execute('SELECT host_key, path, secure, expires_utc, name, value, encrypted_value '
-                        'FROM cookies WHERE host_key like "%{}%";'.format(self.domain_name))
+            cur.execute('SELECT host_key, path, secure, expires_utc, name, value, encrypted_value, is_httponly '
+                        'FROM cookies WHERE host_key like ?;', ('%{}%'.format(self.domain_name),))
         except sqlite3.OperationalError:
             # chrome >=56
-            cur.execute('SELECT host_key, path, is_secure, expires_utc, name, value, encrypted_value '
-                        'FROM cookies WHERE host_key like "%{}%";'.format(self.domain_name))
+            cur.execute('SELECT host_key, path, is_secure, expires_utc, name, value, encrypted_value, is_httponly '
+                        'FROM cookies WHERE host_key like ?;', ('%{}%'.format(self.domain_name),))
 
         cj = http.cookiejar.CookieJar()
-        epoch_start = datetime.datetime(1601, 1, 1)
-        for item in cur.fetchall():
-            host, path, secure, expires, name = item[:5]
-            if item[3] != 0:
-                # ensure dates don't exceed the datetime limit of year 10000
-                try:
-                    offset = min(int(item[3]), 265000000000000000)
-                    delta = datetime.timedelta(microseconds=offset)
-                    expires = epoch_start + delta
-                    expires = expires.timestamp()
-                # Windows 7 has a further constraint
-                except OSError:
-                    offset = min(int(item[3]), 32536799999000000)
-                    delta = datetime.timedelta(microseconds=offset)
-                    expires = epoch_start + delta
-                    expires = expires.timestamp()
 
-            value = self._decrypt(item[5], item[6])
-            c = create_cookie(host, path, secure, expires, name, value)
+        for item in cur.fetchall():
+            # Per https://github.com/chromium/chromium/blob/main/base/time/time.h#L5-L7,
+            # Chromium-based browsers store cookies' expiration timestamps as MICROSECONDS elapsed
+            # since the Windows NT epoch (1601-01-01 0:00:00 GMT), or 0 for session cookies.
+            #
+            # http.cookiejar stores cookies' expiration timestamps as SECONDS since the Unix epoch
+            # (1970-01-01 0:00:00 GMT, or None for session cookies.
+            host, path, secure, expires_nt_time_epoch, name, value, enc_value, http_only = item
+            if (expires_nt_time_epoch == 0):
+                expires = None
+            else:
+                expires = (expires_nt_time_epoch / 1000000) - self.UNIX_TO_NT_EPOCH_OFFSET
+
+            value = self._decrypt(value, enc_value)
+            c = create_cookie(host, path, secure, expires, name, value, http_only)
             cj.set_cookie(c)
         con.close()
         return cj
@@ -316,8 +347,7 @@ class ChromiumBased:
         return data.decode()
 
     def _decrypt(self, value, encrypted_value):
-        """Decrypt encoded cookies
-        """
+        """Decrypt encoded cookies"""
 
         if sys.platform == 'win32':
             try:
@@ -325,14 +355,14 @@ class ChromiumBased:
 
             # Fix for change in Chrome 80
             except RuntimeError:  # Failed to decrypt the cipher text with DPAPI
-                if not self.key:
+                if not self.v10_key:
                     raise RuntimeError(
                         'Failed to decrypt the cipher text with DPAPI and no AES key.')
                 # Encrypted cookies should be prefixed with 'v10' according to the
                 # Chromium code. Strip it off.
                 encrypted_value = encrypted_value[3:]
                 nonce, tag = encrypted_value[:12], encrypted_value[-16:]
-                aes = AES.new(self.key, AES.MODE_GCM, nonce=nonce)
+                aes = AES.new(self.v10_key, AES.MODE_GCM, nonce=nonce)
 
                 # will rise Value Error: MAC check failed byte if the key is wrong,
                 # probably we did not got the key and used peanuts
@@ -345,13 +375,18 @@ class ChromiumBased:
         if value or (encrypted_value[:3] not in [b'v11', b'v10']):
             return value
 
-        # Encrypted cookies should be prefixed with 'v10' according to the
-        # Chromium code. Strip it off.
+        # Encrypted cookies should be prefixed with 'v10' on mac,
+        # 'v10' or 'v11' on Linux. Choose key based on this prefix.
+        # Reference in chromium code: `OSCryptImpl::DecryptString` in
+        # components/os_crypt/os_crypt_linux.cc
+        if not hasattr(self, 'v11_key'):
+            assert encrypted_value[:3] != b'v11', "v11 keys should only appear on Linux."
+        key = self.v11_key if encrypted_value[:3] == b'v11' else self.v10_key
         encrypted_value = encrypted_value[3:]
         encrypted_value_half_len = int(len(encrypted_value) / 2)
 
         cipher = pyaes.Decrypter(
-            pyaes.AESModeOfOperationCBC(self.key, self.iv))
+            pyaes.AESModeOfOperationCBC(key, self.iv))
 
         # will rise Value Error: invalid padding byte if the key is wrong,
         # probably we did not got the key and used peanuts
@@ -365,104 +400,196 @@ class ChromiumBased:
 
 
 class Chrome(ChromiumBased):
+    """Class for Google Chrome"""
     def __init__(self, cookie_file=None, domain_name="", key_file=None):
         args = {
-            'linux_cookies': [
+            'linux_cookies':[
                 '~/.config/google-chrome/Default/Cookies',
                 '~/.config/google-chrome-beta/Default/Cookies'
             ],
-            'windows_cookies': [
-                {'env': 'APPDATA', 'path': '..\\Local\\Google\\Chrome\\User Data\\Default\\Cookies'},
-                {'env': 'LOCALAPPDATA', 'path': 'Google\\Chrome\\User Data\\Default\\Cookies'},
-                {'env': 'APPDATA', 'path': 'Google\\Chrome\\User Data\\Default\\Cookies'}
+            'windows_cookies':[
+                {'env':'APPDATA', 'path':'..\\Local\\Google\\Chrome\\User Data\\Default\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Google\\Chrome\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'Google\\Chrome\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'..\\Local\\Google\\Chrome\\User Data\\Default\\Network\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Google\\Chrome\\User Data\\Default\\Network\\Cookies'},
+                {'env':'APPDATA', 'path':'Google\\Chrome\\User Data\\Default\\Network\\Cookies'}
             ],
-            'osx_cookies': ['~/Library/Application Support/Google/Chrome/Default/Cookies'],
+            'osx_cookies': [
+                '~/Library/Application Support/Google/Chrome/Default/Cookies',
+                '~/Library/Application Support/Google/Chrome/Profile */Cookies'
+            ],
             'windows_keys': [
-                {'env': 'APPDATA', 'path': '..\\Local\\Google\\Chrome\\User Data\\Local State'},
-                {'env': 'LOCALAPPDATA', 'path': 'Google\\Chrome\\User Data\\Local State'},
-                {'env': 'APPDATA', 'path': 'Google\\Chrome\\User Data\\Local State'}
+                {'env':'APPDATA', 'path':'..\\Local\\Google\\Chrome\\User Data\\Local State'},
+                {'env':'LOCALAPPDATA', 'path':'Google\\Chrome\\User Data\\Local State'},
+                {'env':'APPDATA', 'path':'Google\\Chrome\\User Data\\Local State'}
             ],
-            'os_crypt_name': 'chrome',
-            'osx_key_service': 'Chrome Safe Storage',
-            'osx_key_user': 'Chrome'
+            'os_crypt_name':'chrome',
+            'osx_key_service' : 'Chrome Safe Storage',
+            'osx_key_user' : 'Chrome'
         }
-
         super().__init__(browser='Chrome', cookie_file=cookie_file, domain_name=domain_name, key_file=key_file, **args)
 
 
 class Chromium(ChromiumBased):
+    """Class for Chromium"""
     def __init__(self, cookie_file=None, domain_name="", key_file=None):
         args = {
-            'linux_cookies': ['~/.config/chromium/Default/Cookies'],
-            'windows_cookies': [
-                {'env': 'APPDATA', 'path': '..\\Local\\Chromium\\User Data\\Default\\Cookies'},
-                {'env': 'LOCALAPPDATA', 'path': 'Chromium\\User Data\\Default\\Cookies'},
-                {'env': 'APPDATA', 'path': 'Chromium\\User Data\\Default\\Cookies'}
+            'linux_cookies':['~/.config/chromium/Default/Cookies'],
+            'windows_cookies':[
+                {'env':'APPDATA', 'path':'..\\Local\\Chromium\\User Data\\Default\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Chromium\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'Chromium\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'..\\Local\\Chromium\\User Data\\Default\\Network\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Chromium\\User Data\\Default\\Network\\Cookies'},
+                {'env':'APPDATA', 'path':'Chromium\\User Data\\Default\\Network\\Cookies'}
             ],
-            'osx_cookies': ['~/Library/Application Support/Chromium/Default/Cookies'],
+            'osx_cookies': [
+                '~/Library/Application Support/Chromium/Default/Cookies',
+                '~/Library/Application Support/Chromium/Profile */Cookies',
+            ],
             'windows_keys': [
-                {'env': 'APPDATA', 'path': '..\\Local\\Chromium\\User Data\\Local State'},
-                {'env': 'LOCALAPPDATA', 'path': 'Chromium\\User Data\\Local State'},
-                {'env': 'APPDATA', 'path': 'Chromium\\User Data\\Local State'}
+                {'env':'APPDATA', 'path':'..\\Local\\Chromium\\User Data\\Local State'},
+                {'env':'LOCALAPPDATA', 'path':'Chromium\\User Data\\Local State'},
+                {'env':'APPDATA', 'path':'Chromium\\User Data\\Local State'}
             ],
-            'os_crypt_name': 'chromium',
-            'osx_key_service': 'Chromium Safe Storage',
-            'osx_key_user': 'Chromium'
+            'os_crypt_name':'chromium',
+            'osx_key_service' : 'Chromium Safe Storage',
+            'osx_key_user' : 'Chromium'
         }
-        super().__init__(browser='Chromium', cookie_file=cookie_file, domain_name=domain_name, key_file=key_file,
-                         **args)
+        super().__init__(browser='Chromium', cookie_file=cookie_file, domain_name=domain_name, key_file=key_file, **args)
 
 
 class Opera(ChromiumBased):
+    """Class for Opera"""
     def __init__(self, cookie_file=None, domain_name="", key_file=None):
         args = {
             'linux_cookies': ['~/.config/opera/Cookies'],
-            'windows_cookies': [
-                {'env': 'APPDATA', 'path': '..\\Local\\Opera Software\\Opera Stable\\Cookies'},
-                {'env': 'LOCALAPPDATA', 'path': 'Opera Software\\Opera Stable\\Cookies'},
-                {'env': 'APPDATA', 'path': 'Opera Software\\Opera Stable\\Cookies'}
+            'windows_cookies':[
+                {'env':'APPDATA', 'path':'..\\Local\\Opera Software\\Opera Stable\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Opera Software\\Opera Stable\\Cookies'},
+                {'env':'APPDATA', 'path':'Opera Software\\Opera Stable\\Cookies'},
+                {'env':'APPDATA', 'path':'..\\Local\\Opera Software\\Opera Stable\\Network\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Opera Software\\Opera Stable\\Network\\Cookies'},
+                {'env':'APPDATA', 'path':'Opera Software\\Opera Stable\\Network\\Cookies'}
             ],
             'osx_cookies': ['~/Library/Application Support/com.operasoftware.Opera/Cookies'],
             'windows_keys': [
-                {'env': 'APPDATA', 'path': '..\\Local\\Opera Software\\Opera Stable\\Local State'},
-                {'env': 'LOCALAPPDATA', 'path': 'Opera Software\\Opera Stable\\Local State'},
-                {'env': 'APPDATA', 'path': 'Opera Software\\Opera Stable\\Local State'}
+                {'env':'APPDATA', 'path':'..\\Local\\Opera Software\\Opera Stable\\Local State'},
+                {'env':'LOCALAPPDATA', 'path':'Opera Software\\Opera Stable\\Local State'},
+                {'env':'APPDATA', 'path':'Opera Software\\Opera Stable\\Local State'}
             ],
-            'os_crypt_name': 'chromium',
-            'osx_key_service': 'Opera Safe Storage',
-            'osx_key_user': 'Opera'
+            'os_crypt_name':'chromium',
+            'osx_key_service' : 'Opera Safe Storage',
+            'osx_key_user' : 'Opera'
         }
-
         super().__init__(browser='Opera', cookie_file=cookie_file, domain_name=domain_name, key_file=key_file, **args)
 
 
+class Brave(ChromiumBased):
+    def __init__(self, cookie_file=None, domain_name="", key_file=None):
+        args = {
+            'linux_cookies':[
+                '~/.config/BraveSoftware/Brave-Browser/Default/Cookies',
+                '~/.config/BraveSoftware/Brave-Browser-Beta/Default/Cookies'
+            ],
+            'windows_cookies':[
+                {'env':'APPDATA', 'path':'..\\Local\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'BraveSoftware\\Brave-Browser\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'BraveSoftware\\Brave-Browser\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'..\\Local\\BraveSoftware\\Brave-Browser-Beta\\User Data\\Default\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'BraveSoftware\\Brave-Browser-Beta\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'BraveSoftware\\Brave-Browser-Beta\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'..\\Local\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Network\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'BraveSoftware\\Brave-Browser\\User Data\\Default\\Network\\Cookies'},
+                {'env':'APPDATA', 'path':'BraveSoftware\\Brave-Browser\\User Data\\Default\\Network\\Cookies'},
+            ],
+            'osx_cookies': [
+                '~/Library/Application Support/BraveSoftware/Brave-Browser/Default/Cookies',
+                '~/Library/Application Support/BraveSoftware/Brave-Browser-Beta/Default/Cookies',
+                '~/Library/Application Support/BraveSoftware/Brave-Browser/Profile */Cookies',
+                '~/Library/Application Support/BraveSoftware/Brave-Browser-Beta/Profile */Cookies'
+            ],
+            'windows_keys': [
+                {'env':'APPDATA', 'path':'..\\Local\\BraveSoftware\\Brave-Browser\\User Data\\Local State'},
+                {'env':'LOCALAPPDATA', 'path':'BraveSoftware\\Brave-Browser\\User Data\\Local State'},
+                {'env':'APPDATA', 'path':'BraveSoftware\\Brave-Browser\\User Data\\Local State'},
+                {'env':'APPDATA', 'path':'..\\Local\\BraveSoftware\\Brave-Browser-Beta\\User Data\\Local State'},
+                {'env':'LOCALAPPDATA', 'path':'BraveSoftware\\Brave-Browse-Betar\\User Data\\Local State'},
+                {'env':'APPDATA', 'path':'BraveSoftware\\Brave-Browser-Beta\\User Data\\Local State'}
+            ],
+            'os_crypt_name':'brave',
+            'osx_key_service' : 'Brave Safe Storage',
+            'osx_key_user' : 'Brave'
+        }
+        super().__init__(browser='Brave', cookie_file=cookie_file, domain_name=domain_name, key_file=key_file, **args)
+
+
 class Edge(ChromiumBased):
+    """Class for Microsoft Edge"""
     def __init__(self, cookie_file=None, domain_name="", key_file=None):
         args = {
             'linux_cookies': [
                 '~/.config/microsoft-edge/Default/Cookies',
                 '~/.config/microsoft-edge-dev/Default/Cookies'
             ],
-            'windows_cookies': [
-                {'env': 'APPDATA', 'path': '..\\Local\\Microsoft\\Edge\\User Data\\Default\\Cookies'},
-                {'env': 'LOCALAPPDATA', 'path': 'Microsoft\\Edge\\User Data\\Default\\Cookies'},
-                {'env': 'APPDATA', 'path': 'Microsoft\\Edge\\User Data\\Default\\Cookies'}
+            'windows_cookies':[
+                {'env':'APPDATA', 'path':'..\\Local\\Microsoft\\Edge\\User Data\\Default\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Microsoft\\Edge\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'Microsoft\\Edge\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'..\\Local\\Microsoft\\Edge\\User Data\\Default\\Network\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Microsoft\\Edge\\User Data\\Default\\Network\\Cookies'},
+                {'env':'APPDATA', 'path':'Microsoft\\Edge\\User Data\\Default\\Network\\Cookies'}
             ],
-            'osx_cookies': ['~/Library/Application Support/Microsoft Edge/Default/Cookies'],
+            'osx_cookies': [
+                '~/Library/Application Support/Microsoft Edge/Default/Cookies',
+                '~/Library/Application Support/Microsoft Edge/Profile */Cookies'
+            ],
             'windows_keys': [
-                {'env': 'APPDATA', 'path': '..\\Local\\Microsoft\\Edge\\User Data\\Local State'},
-                {'env': 'LOCALAPPDATA', 'path': 'Microsoft\\Edge\\User Data\\Local State'},
-                {'env': 'APPDATA', 'path': 'Microsoft\\Edge\\User Data\\Local State'}
+                {'env':'APPDATA', 'path':'..\\Local\\Microsoft\\Edge\\User Data\\Local State'},
+                {'env':'LOCALAPPDATA', 'path':'Microsoft\\Edge\\User Data\\Local State'},
+                {'env':'APPDATA', 'path':'Microsoft\\Edge\\User Data\\Local State'}
             ],
-            'os_crypt_name': 'chromium',
-            'osx_key_service': 'Microsoft Edge Safe Storage',
-            'osx_key_user': 'Microsoft Edge'
+            'os_crypt_name':'chromium',
+            'osx_key_service' : 'Microsoft Edge Safe Storage',
+            'osx_key_user' : 'Microsoft Edge'
         }
-
         super().__init__(browser='Edge', cookie_file=cookie_file, domain_name=domain_name, key_file=key_file, **args)
 
 
+class Vivaldi(ChromiumBased):
+    """Class for Vivaldi Browser"""
+    def __init__(self, cookie_file=None, domain_name="", key_file=None):
+        args = {
+            'linux_cookies': [
+                '~/.config/vivaldi/Default/Cookies'
+            ],
+            'windows_cookies':[
+                {'env':'APPDATA', 'path':'..\\Local\\Vivaldi\\User Data\\Default\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Vivaldi\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'Vivaldi\\User Data\\Default\\Cookies'},
+                {'env':'APPDATA', 'path':'..\\Local\\Vivaldi\\User Data\\Default\\Network\\Cookies'},
+                {'env':'LOCALAPPDATA', 'path':'Vivaldi\\User Data\\Default\\Network\\Cookies'},
+                {'env':'APPDATA', 'path':'Vivaldi\\User Data\\Default\\Network\\Cookies'}
+            ],
+            'osx_cookies': [
+                '~/Library/Application Support/Vivaldi/Default/Cookies',
+                '~/Library/Application Support/Vivaldi/Profile */Cookies'
+            ],
+            'windows_keys': [
+                {'env':'APPDATA', 'path':'..\\Local\\Vivaldi\\User Data\\Local State'},
+                {'env':'LOCALAPPDATA', 'path':'Vivaldi\\User Data\\Local State'},
+                {'env':'APPDATA', 'path':'Vivaldi\\User Data\\Local State'}
+            ],
+            'os_crypt_name':'chrome',
+            'osx_key_service' : 'Vivaldi Safe Storage',
+            'osx_key_user' : 'Vivaldi'
+        }
+        super().__init__(browser='Vivaldi', cookie_file=cookie_file, domain_name=domain_name, key_file=key_file, **args)
+
+
 class Firefox:
+    """Class for Firefox"""
     def __init__(self, cookie_file=None, domain_name=""):
         self.tmp_cookie_file = None
         cookie_file = cookie_file or self.find_cookie_file()
@@ -494,7 +621,7 @@ class Firefox:
             return fallback_path
 
         profiles_ini_path = profiles_ini_path[0]
-        config.read(profiles_ini_path)
+        config.read(profiles_ini_path, encoding="utf8")
 
         profile_path = None
         for section in config.sections():
@@ -520,16 +647,18 @@ class Firefox:
         if sys.platform == 'darwin':
             user_data_path = os.path.expanduser(
                 '~/Library/Application Support/Firefox')
-        elif sys.platform.startswith('linux'):
-            user_data_path = os.path.expanduser('~/.mozilla/firefox')
+        elif sys.platform.startswith('linux') or 'bsd' in sys.platform.lower():
+            general_path = os.path.expanduser('~/.mozilla/firefox')
+            if os.path.isdir(general_path):
+                user_data_path = general_path
+            else:
+                user_data_path = os.path.expanduser('~/snap/firefox/common/.mozilla/firefox')
         elif sys.platform == 'win32':
             user_data_path = os.path.join(
                 os.environ.get('APPDATA'), 'Mozilla', 'Firefox')
             # legacy firefox <68 fallback
-            cookie_files = glob.glob(
-                os.path.join(os.environ.get('PROGRAMFILES'), 'Mozilla Firefox', 'profile', 'cookies.sqlite')) \
-                           or glob.glob(
-                os.path.join(os.environ.get('PROGRAMFILES(X86)'), 'Mozilla Firefox', 'profile', 'cookies.sqlite'))
+            cookie_files = glob.glob(os.path.join(os.environ.get('PROGRAMFILES'), 'Mozilla Firefox', 'profile', 'cookies.sqlite')) \
+                           or glob.glob(os.path.join(os.environ.get('PROGRAMFILES(X86)'), 'Mozilla Firefox', 'profile', 'cookies.sqlite'))
         else:
             raise BrowserCookieError(
                 'Unsupported operating system: ' + sys.platform)
@@ -540,16 +669,14 @@ class Firefox:
         if cookie_files:
             return cookie_files[0]
         else:
-            raise BrowserCookieError('Failed to find Firefox cookie')
+            raise BrowserCookieError('Failed to find Firefox cookie file')
 
     @staticmethod
     def __create_session_cookie(cookie_json):
-        expires = str(int(time.time()) + 3600 * 24 * 7)
-        # return create_cookie(cookie_json.get('host', ''), cookie_json.get('path', ''), False, expires,
-        #                      cookie_json.get('name', ''), cookie_json.get('value', ''))
         return create_cookie(cookie_json.get('host', ''), cookie_json.get('path', ''),
-                             cookie_json.get('secure', False), expires,
-                             cookie_json.get('name', ''), cookie_json.get('value', ''))
+                             cookie_json.get('secure', False), None,
+                             cookie_json.get('name', ''), cookie_json.get('value', ''),
+                             cookie_json.get('httponly', False))
 
     def __add_session_cookies(self, cj):
         if not os.path.exists(self.session_file):
@@ -582,12 +709,13 @@ class Firefox:
     def load(self):
         con = sqlite3.connect(self.tmp_cookie_file)
         cur = con.cursor()
-        cur.execute('select host, path, isSecure, expiry, name, value from moz_cookies '
-                    'where host like "%{}%"'.format(self.domain_name))
+        cur.execute('select host, path, isSecure, expiry, name, value, isHttpOnly from moz_cookies '
+                    'where host like ?', ('%{}%'.format(self.domain_name),))
 
         cj = http.cookiejar.CookieJar()
         for item in cur.fetchall():
-            c = create_cookie(*item)
+            host, path, secure, expires, name, value, http_only = item
+            c = create_cookie(host, path, secure, expires, name, value, http_only)
             cj.set_cookie(c)
         con.close()
 
@@ -597,11 +725,113 @@ class Firefox:
         return cj
 
 
-def create_cookie(host, path, secure, expires, name, value):
-    """Shortcut function to create a cookie
-    """
+class Safari:
+    """Class for Safari"""
+
+    APPLE_TO_UNIX_TIME = 978307200
+    NEW_ISSUE_MESSAGE = 'Page format changed.\nPlease create a new issue on: https://github.com/borisbabic/browser_cookie3/issues/new'
+
+    def __init__(self, cookie_file=None, domain_name="") -> None:
+        self.__offset = 0
+        self.__domain_name = domain_name
+        self.__buffer = None
+        self.__open_file(cookie_file)
+        self.__parse_header()
+
+    def __del__(self):
+        if self.__buffer:
+            self.__buffer.close()
+
+    def __open_file(self, cookie_file):
+        if cookie_file is None:
+            cookie_file = os.path.expanduser('~/Library/Cookies/Cookies.binarycookies')
+        if not os.path.exists(cookie_file):
+            raise BrowserCookieError('Can not find Safari cookie file')
+        self.__buffer = open(cookie_file, 'rb')
+
+    def __read_file(self, size:int, offset:int=None):
+        if offset is not None:
+            self.__offset = offset
+        self.__buffer.seek(self.__offset)
+        self.__offset += size
+        return BytesIO(self.__buffer.read(size))
+
+    def __parse_header(self):
+        assert self.__buffer.read(4) == b'cook', 'Not a safari cookie file'
+        self.__total_page = struct.unpack('>I', self.__buffer.read(4))[0]
+
+        self.__page_sizes = []
+        for _ in range(self.__total_page):
+            self.__page_sizes.append(struct.unpack('>I', self.__buffer.read(4))[0])
+
+    @staticmethod
+    def __read_until_null(file:BytesIO, decode:bool=True):
+        data = []
+        while True:
+            byte = file.read(1)
+            if byte == b'\x00':
+                break
+            data.append(byte)
+        data = b''.join(data)
+        if decode:
+            data = data.decode('utf-8')
+        return data
+
+    def __parse_cookie(self, page:BytesIO, cookie_offset:int):
+        page.seek(cookie_offset)
+        cookie_size = struct.unpack('<Q', page.read(8))[0]
+        flags = struct.unpack('<Q', page.read(8))[0]
+        is_secure = bool(flags & 0x1)
+        is_httponly = bool(flags & 0x4)
+
+        host_offset = struct.unpack('<I', page.read(4))[0]
+        name_offset = struct.unpack('<I', page.read(4))[0]
+        path_offset = struct.unpack('<I', page.read(4))[0]
+        value_offset = struct.unpack('<I', page.read(4))[0]
+
+        assert page.read(8) == b'\x00' * 8, self.NEW_ISSUE_MESSAGE
+        expiry_date = int(struct.unpack('<d', page.read(8))[0] + self.APPLE_TO_UNIX_TIME) # convert to unix time
+        access_time = int(struct.unpack('<d', page.read(8))[0] + self.APPLE_TO_UNIX_TIME) # convert to unix time
+
+        name = self.__read_until_null(page)
+        value = self.__read_until_null(page)
+        host = self.__read_until_null(page)
+        path = self.__read_until_null(page)
+
+        return create_cookie(host, path, is_secure, expiry_date, name, value, is_httponly)
+
+    def __domain_filter(self, cookie: http.cookiejar.Cookie):
+        if not self.__domain_name:
+            return True
+        return self.__domain_name in cookie.domain
+
+    def __parse_page(self, page_index:int):
+        offset = 8 + self.__total_page * 4 + sum(self.__page_sizes[:page_index])
+        page = self.__read_file(self.__page_sizes[page_index], offset)
+        assert page.read(4) == b'\x00\x00\x01\x00', self.NEW_ISSUE_MESSAGE
+        n_cookies = struct.unpack('<I', page.read(4))[0]
+        cookie_offsets = []
+        for _ in range(n_cookies):
+            cookie_offsets.append(struct.unpack('<I', page.read(4))[0])
+        assert page.read(4) == b'\x00\x00\x00\x00', self.NEW_ISSUE_MESSAGE
+
+        for offset in cookie_offsets:
+            yield self.__parse_cookie(page, offset)
+
+    def load(self):
+        cj = http.cookiejar.CookieJar()
+        for i in range(self.__total_page):
+            for cookie in self.__parse_page(i):
+                if self.__domain_filter(cookie):
+                    cj.set_cookie(cookie)
+        return cj
+
+def create_cookie(host, path, secure, expires, name, value, http_only):
+    """Shortcut function to create a cookie"""
+    # HTTPOnly flag goes in _rest, if present (see https://github.com/python/cpython/pull/17471/files#r511187060)
     return http.cookiejar.Cookie(0, name, value, None, False, host, host.startswith('.'), host.startswith('.'), path,
-                                 True, secure, expires, False, None, None, {})
+                                 True, secure, expires, False, None, None,
+                                 {'HTTPOnly': ''} if http_only else {})
 
 
 def chrome(cookie_file=None, domain_name="", key_file=None):
@@ -625,11 +855,25 @@ def opera(cookie_file=None, domain_name="", key_file=None):
     return Opera(cookie_file, domain_name, key_file).load()
 
 
+def brave(cookie_file=None, domain_name="", key_file=None):
+    """Returns a cookiejar of the cookies and sessions used by Brave. Optionally
+    pass in a domain name to only load cookies from the specified domain
+    """
+    return Brave(cookie_file, domain_name, key_file).load()
+
+
 def edge(cookie_file=None, domain_name="", key_file=None):
     """Returns a cookiejar of the cookies used by Microsoft Egde. Optionally pass in a
     domain name to only load cookies from the specified domain
     """
     return Edge(cookie_file, domain_name, key_file).load()
+
+
+def vivaldi(cookie_file=None, domain_name="", key_file=None):
+    """Returns a cookiejar of the cookies used by Vivaldi Browser. Optionally pass in a
+    domain name to only load cookies from the specified domain
+    """
+    return Vivaldi(cookie_file, domain_name, key_file).load()
 
 
 def firefox(cookie_file=None, domain_name=""):
@@ -638,22 +882,29 @@ def firefox(cookie_file=None, domain_name=""):
     """
     return Firefox(cookie_file, domain_name).load()
 
+def safari(cookie_file=None, domain_name=""):
+    """Returns a cookiejar of the cookies and sessions used by Safari. Optionally
+    pass in a domain name to only load cookies from the specified domain
+    """
+    return Safari(cookie_file, domain_name).load()
 
 def load(domain_name=""):
     """Try to load cookies from all supported browsers and return combined cookiejar
     Optionally pass in a domain name to only load cookies from the specified domain
     """
     cj = http.cookiejar.CookieJar()
-    for cookie_fn in [chrome, chromium, opera, edge, firefox]:
+    for cookie_fn in [chrome, chromium, opera, brave, edge, vivaldi, firefox, safari]:
         try:
             for cookie in cookie_fn(domain_name=domain_name):
                 cj.set_cookie(cookie)
         except BrowserCookieError:
             pass
-        if cj:
-            break
     return cj
+
+# https://github.com/borisbabic/browser_cookie3/blob/master/__init__.py
 
 
 if __name__ == '__main__':
-    print(load())
+
+    print(load("woozooo.com"))
+

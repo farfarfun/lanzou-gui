@@ -1,12 +1,22 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 # 本文件用于打包 Windows 程序
+# https://pyinstaller.org/en/stable/spec-files.html
+# https://pyinstaller.org/en/stable/advanced-topics.html#the-toc-and-tree-classes
 # pip install pyinstaller
 # pyinstaller --clean --noconfirm build_exe.spec
+import time
+import re
+
+pattern_binary = "Qt5|Qt6Pdf.dll|Qt6Network.dll"
+regex_binary = re.compile(pattern_binary)
+pattern_data = "Qt5|-info"
+regex_data = re.compile(pattern_data)
 
 block_cipher = None
 
-
+start = time.time()
+print("start",start)
 a = Analysis(['main.py'],
              pathex=['.'],
              binaries=[],
@@ -20,10 +30,15 @@ a = Analysis(['main.py'],
              cipher=block_cipher,
              noarchive=False)
 
-a.binaries = [x for x in a.binaries if 'login_assister' not in x[0]]
-print(a.binaries)
+# 移除无关dll 和 data
+a.binaries = [x for x in a.binaries if regex_binary.search(x[0]) is None]
+a.datas = [x for x in a.datas if regex_data.search(x[0]) is None]
+print("binaries",time.time() -start, a.binaries)
+print("datas",time.time()-start, a.datas)
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+print("pyz",time.time()-start, pyz)
+
 exe = EXE(pyz,
           a.scripts,
           [],
@@ -36,6 +51,8 @@ exe = EXE(pyz,
           console=False,
           version='./version_info.txt',
           icon='./app_icon.ico')
+print("exe",time.time()-start, exe)
+
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
@@ -43,82 +60,11 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                upx_exclude=[
-                    'qt5webenginecore.dll',
                     'vcruntime140.dll',
                     'vcruntime140_1.dll',
-                    'msvcp140_1.dll','msvcp140.dll',
-                    'qtquick3deffectplugin.dll',
-                    'qtgraphicaleffectsprivate.dll',
-                    'qtquick2plugin.dll',
-                    'declarative_nfc.dll',
-                    'modelsplugin.dll',
-                    'qtquickextrasflatplugin.dll',
-                    'dialogplugin.dll',
-                    'qtquickscene2dplugin.dll',
-                    'sharedimageplugin.dll',
-                    'qtquick3dhelpersplugin.dll',
-                    'qmlsettingsplugin.dll',
-                    'qmlwavefrontmeshplugin.dll',
-                    'qxdgdesktopportal.dll',
-                    'qtquicktemplates2plugin.dll',
-                    'qtquicktimelineplugin.dll',
-                    'locationlabsplugin.dll',
-                    'qquicklayoutsplugin.dll',
-                    'qico.dll',
-                    'declarative_positioning.dll',
-                    'qtlabscalendarplugin.dll',
-                    'qsvg.dll',
-                    'qmlplugin.dll',
-                    'qtquickcontrols2fusionstyleplugin.dll',
-                    'qtiff.dll',
-                    'qtqmlremoteobjects.dll',
-                    'qtwebengineplugin.dll',
-                    'qtquickcontrols2plugin.dll',
-                    'declarative_qmlwebsockets.dll',
-                    'declarative_sensors.dll',
-                    'qsvgicon.dll',
-                    'qmltestplugin.dll',
-                    'declarative_location.dll',
-                    'dialogsprivateplugin.dll',
-                    'declarative_multimedia.dll',
-                    'windowplugin.dll',
-                    'particlesplugin.dll',
-                    'qtgraphicaleffectsplugin.dll',
-                    'workerscriptplugin.dll',
-                    'qgif.dll',
-                    'qtquickcontrolsplugin.dll',
-                    'qminimal.dll',
-                    'qjpeg.dll',
-                    'qwebgl.dll',
-                    'qtqmlstatemachine.dll',
-                    'qtquickcontrols2materialstyleplugin.dll',
-                    'qgenericbearer.dll',
-                    'declarative_webchannel.dll',
-                    'labsanimationplugin.dll',
-                    'qwbmp.dll',
-                    'qtquickcontrols2imaginestyleplugin.dll',
-                    'qtquickcontrols2universalstyleplugin.dll',
-                    'qmlshapesplugin.dll',
-                    'qtposition_serialnmea.dll',
-                    'qtquickscene3dplugin.dll',
-                    'qmllocalstorageplugin.dll',
-                    'qtquick3dmaterialplugin.dll',
-                    'qmlxmllistmodelplugin.dll',
-                    'qtposition_positionpoll.dll',
-                    'qmlfolderlistmodelplugin.dll',
-                    'qtquickextrasplugin.dll',
-                    'windowsprintersupport.dll',
-                    'labsmodelsplugin.dll',
-                    'qtposition_winrt.dll',
-                    'qtga.dll',
-                    'qwindowsvistastyle.dll',
-                    'qwebp.dll',
-                    'qwindows.dll',
-                    'qtlabsplatformplugin.dll',
-                    'declarative_bluetooth.dll',
-                    'qoffscreen.dll',
-                    'widgetsplugin.dll',
-                    'qicns.dll',
-                    'qquick3dplugin.dll'
+                    'msvcp140_1.dll',
+                    'msvcp140.dll',
                 ],
                name='lanzou-gui')
+
+print("coll", time.time()-start, coll)

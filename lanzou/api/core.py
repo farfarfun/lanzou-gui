@@ -789,7 +789,9 @@ class LanZouCloud(object):
         if not os.path.isfile(file_path):
             return LanZouCloud.PATH_ERROR, 0, True
         # 文件已经存在同名文件就删除
-        filename = name_format(os.path.basename(file_path)) + ".enc"
+        filename = name_format(os.path.basename(file_path))
+        if not is_name_valid(filename):
+            filename = filename + ".enc"
         file = open(file_path, 'rb')
         post_data = {
             "task": "1",

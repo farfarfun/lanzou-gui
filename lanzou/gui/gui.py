@@ -48,7 +48,10 @@ def open_in_explorer(task):
 
 
 def open_file(task):
-    QDesktopServices.openUrl(QUrl.fromLocalFile(task.path + "/" + task.name))
+    url = QUrl.fromLocalFile(task.path + "/" + task.name)
+    if not QDesktopServices.openUrl(url):
+        logger.error(f"open file failed{url}", )
+
 
 class MainWindow(Ui_MainWindow):
 
@@ -657,7 +660,7 @@ class MainWindow(Ui_MainWindow):
             if isinstance(item, DlJob):
                 print("open_downloaded_file", item)
                 for task in self._tasks.values():
-                    print("open_downloaded_file 222", task,task.type == 'dl')
+                    print("open_downloaded_file 222", task, task.type == 'dl')
                     print("open_downloaded_file 222", task.path, item.path)
                     print("open_downloaded_file state", task.type == 'dl',
                           task.name == item.name,
@@ -785,7 +788,7 @@ class MainWindow(Ui_MainWindow):
 
     def change_disk_dir(self, dir_name):
         """双击切换工作目录"""
-        print("ddddd111", dir_name,dir_name.row())
+        print("ddddd111", dir_name, dir_name.row())
         item = self.model_disk.item(dir_name.row(), 0)
         if item.text() == "..":  # 返回上级路径
             self.list_refresher.set_values(self._parent_id)

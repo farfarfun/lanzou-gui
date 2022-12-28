@@ -369,7 +369,6 @@ class FileInfos(Infos):
         return self._has_des
 
 
-
 class FolderInfos(Infos):
     def __init__(self, folder):
         super(FolderInfos, self).__init__(is_file=False)

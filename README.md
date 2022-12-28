@@ -19,7 +19,9 @@
 
 - 得益于 API 的功能，~~可以间接突破单文件最大 100MB 的限制~~(已关闭)，可以上传任意后缀文件，同时增加了批量上传/下载的功能
 
-- `Python` 依赖见[requirements.txt](https://github.com/rachpt/lanzou-gui/blob/master/requirements.txt)，[releases](https://github.com/rachpt/lanzou-gui/releases) 有打包好了的 Windows 可执行程序，但**可能不是最新的**
+- `Python`
+  依赖见[requirements.txt](https://github.com/rachpt/lanzou-gui/blob/master/requirements.txt)，[releases](https://github.com/rachpt/lanzou-gui/releases)
+  有打包好了的 Windows 可执行程序，但**可能不是最新的**
 
 # 预览
 
@@ -27,8 +29,8 @@
 
 [![what's-new-v0.3.6.gif](https://i.loli.net/2021/01/03/UCkicu6H7QeOyMs.gif)](https://files.catbox.moe/o2b3q1.webp)
 
-
 # 说明
+
 - 默认并发上传下载任务为3，可以自行设置，单个文件还是单线程的；
 
 - 文件可以直接拖拽到软件界面上传，也可以使用对话框选择；
@@ -39,10 +41,10 @@
 
 - 更多说明与详细界面预览详见 [WiKi](https://github.com/rachpt/lanzou-gui/wiki)。
 
-
 # 其他
 
-Arch Linux [AUR](https://aur.archlinux.org/packages/lanzou-gui/)，感谢 [@bruceutut](https://aur.archlinux.org/account/bruceutut) 维护。
+Arch Linux [AUR](https://aur.archlinux.org/packages/lanzou-gui/)
+，感谢 [@bruceutut](https://aur.archlinux.org/account/bruceutut) 维护。
 
 ```sh
 # Arch 系 Linux 安装命令
@@ -59,11 +61,13 @@ python >= 3.6。
 
 [zaxtyson/LanZouCloud-API](https://github.com/zaxtyson/LanZouCloud-API)
 
-
 # Licenses
 
-lanzou-gui: Copyright (c) [Leon406](https://gitee.com/Leon406/). See the [MIT LICENSE](https://github.com/Leon406/lanzou-gui/blob/master/LICENSE) for details.
+lanzou-gui: Copyright (c) [Leon406](https://gitee.com/Leon406/). See
+the [MIT LICENSE](https://github.com/Leon406/lanzou-gui/blob/master/LICENSE) for details.
 
-lanzou-gui: Copyright (c) [rachpt](https://gitee.com/rachpt/). See the [MIT LICENSE](https://github.com/rachpt/lanzou-gui/blob/master/LICENSE) for details.
+lanzou-gui: Copyright (c) [rachpt](https://gitee.com/rachpt/). See
+the [MIT LICENSE](https://github.com/rachpt/lanzou-gui/blob/master/LICENSE) for details.
 
-lanzou-api: Copyright (c) [zaxtyson](https://github.com/zaxtyson/). [MIT LICENSE](https://github.com/zaxtyson/LanZouCloud-API/blob/master/LICENSE).
+lanzou-api: Copyright (
+c) [zaxtyson](https://github.com/zaxtyson/). [MIT LICENSE](https://github.com/zaxtyson/LanZouCloud-API/blob/master/LICENSE).

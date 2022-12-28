@@ -16,12 +16,14 @@ code='密码'
 
 resp:
 text
+
 ```html
+
 <div class="info_box">
-<div align="center" style="display:none;">提示信息</div>
-<div align="center">
-<div class="info_b2"><p>恭喜您，设置成功</p>
-</div>
+    <div align="center" style="display:none;">提示信息</div>
+    <div align="center">
+        <div class="info_b2"><p>恭喜您，设置成功</p>
+        </div>
 ```
 
 2. 获取使用 cookie 登录用户名：
@@ -30,6 +32,7 @@ https://pc.woozooo.com/mydisk.php?item=profile&action=mypower
 GET
 
 resp：
+
 ```py
 re.fandall(r'url ='https://wwa.lanzous.com/u/(\w+)?t2';', resp.text)
 ```

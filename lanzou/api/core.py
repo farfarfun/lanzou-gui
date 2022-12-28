@@ -25,6 +25,48 @@ from lanzou.debug import logger
 
 __all__ = ['LanZouCloud']
 
+check_url = "https://www.lanzoub.com"
+available_domains = [
+    'lanzoub.com',
+    'lanzoue.com',
+    'lanzouf.com',
+    'lanzouh.com',
+    'lanzoui.com',
+    'lanzoul.com',
+    'lanzoum.com',
+    'lanzoup.com',
+    'lanzout.com',
+    'lanzouu.com',
+    'lanzouv.com',
+    'lanzouw.com',
+    'lanzoux.com',
+    'lanzouy.com',
+]
+
+executors = ThreadPoolExecutor()  # 线程数 min(32, os.cpu_count() + 4)
+
+
+def check_domains():
+    before = len(available_domains)
+    for domain in available_domains:
+        req_url = check_url.replace('lanzoub.com', domain)
+        try:
+            rsp = requests.head(req_url, timeout=0.1)
+            if rsp.status_code != 200:
+                available_domains.remove(domain)
+
+        except Exception:
+            available_domains.remove(domain)
+
+    logger.error(f"before: {before} after: %s %s" % (len(available_domains), available_domains))
+    if len(available_domains) == 0:
+        logger.error("No available domains!!")
+        raise Exception("No available domains!!")
+
+
+#  启动时检测可用域名, 放到线程池执行,加快启动
+executors.submit(check_domains)
+
 
 class LanZouCloud(object):
     FAILED = -1
@@ -46,7 +88,7 @@ class LanZouCloud(object):
         self._timeout = 15  # 每个请求的超时(不包含下载响应体的用时)
         self._max_size = 100  # 单个文件大小上限 MB
         self._upload_delay = (0, 0)  # 文件上传延时
-        self._host_url = 'https://pan.lanzouo.com'
+        self._host_url = 'https://pan.lanzoub.com'
         self._doupload_url = 'https://pc.woozooo.com/doupload.php'
         self._account_url = 'https://pc.woozooo.com/account.php'
         self._mydisk_url = 'https://pc.woozooo.com/mydisk.php'
@@ -64,6 +106,20 @@ class LanZouCloud(object):
                 kwargs.setdefault('timeout', self._timeout)
                 kwargs.setdefault('headers', self._headers)
                 return self._session.get(possible_url, verify=False, **kwargs)
+            except requests.Timeout:
+                logger.warning("Encountered timeout error while requesting network!")
+                raise TimeoutError
+            except (ConnectionError, requests.RequestException):
+                logger.debug(f"Get {possible_url} failed, try another domain")
+
+        return None
+
+    def _head(self, url, **kwargs):
+        for possible_url in self._all_possible_urls(url):
+            try:
+                kwargs.setdefault('timeout', self._timeout)
+                kwargs.setdefault('headers', self._headers)
+                return self._session.head(possible_url, verify=False, **kwargs)
             except requests.Timeout:
                 logger.warning("Encountered timeout error while requesting network!")
                 raise TimeoutError
@@ -94,13 +150,7 @@ class LanZouCloud(object):
 
     @staticmethod
     def _all_possible_urls(url: str) -> List[str]:
-        """蓝奏云的主域名有时会挂掉, 此时尝试切换到备用域名"""
-        available_domains = [
-            'lanzouw.com',  # 鲁ICP备15001327号-7, 2021-09-02
-            'lanzoui.com',  # 鲁ICP备15001327号-6, 2020-06-09
-            'lanzoux.com'  # 鲁ICP备15001327号-5, 2020-06-09
-        ]
-        return [url.replace('lanzouo.com', d) for d in available_domains]
+        return [url.replace('lanzoub.com', d) for d in available_domains]
 
     def set_max_size(self, max_size=100) -> int:
         """设置单文件大小限制(会员用户可超过 100M)"""
@@ -736,9 +786,8 @@ class LanZouCloud(object):
         if not resp or resp.json()['zt'] != 1:  # 获取失败或者网络异常
             return result
 
-        ex = ThreadPoolExecutor()  # 线程数 min(32, os.cpu_count() + 4)
         id_list = [int(folder['folder_id']) for folder in resp.json()['info']]
-        task_list = [ex.submit(self.get_full_path, fid) for fid in id_list]
+        task_list = [executors.submit(self.get_full_path, fid) for fid in id_list]
         for task in as_completed(task_list):
             result.append(task.result())
         return sorted(result)
@@ -777,8 +826,7 @@ class LanZouCloud(object):
             return LanZouCloud.FAILED
 
         self.set_passwd(new_folder_id, info.pwd, False)  # 保持密码相同
-        ex = ThreadPoolExecutor()
-        task_list = [ex.submit(self.move_file, file.id, new_folder_id) for file in self.get_file_list(folder_id)]
+        task_list = [executors.submit(self.move_file, file.id, new_folder_id) for file in self.get_file_list(folder_id)]
         for task in as_completed(task_list):
             if task.result() != LanZouCloud.SUCCESS:
                 return LanZouCloud.FAILED
@@ -974,50 +1022,36 @@ class LanZouCloud(object):
             logger.error(f'File direct url info: {info}')
             return info.code
 
-        resp = self._get(info.durl, stream=True)
+        resp = self._head(info.durl, stream=True)
+        print("down_file_by_url len", len(resp.text), info.durl)
         if not resp:
             task.info = LanZouCloud.NETWORK_ERROR
             return LanZouCloud.NETWORK_ERROR
 
-        # 对于 txt 文件, 可能出现没有 Content-Length 的情况
-        # 此时文件需要下载一次才会出现 Content-Length
-        # 这时候我们先读取一点数据, 再尝试获取一次, 通常只需读取 1 字节数据
         content_length = resp.headers.get('Content-Length', None)
-        if not content_length:
-            data_iter = resp.iter_content(chunk_size=1)
-            max_retries = 5  # 5 次拿不到就算了
-            while not content_length and max_retries > 0:
-                max_retries -= 1
-                logger.warning("Not found Content-Length in response headers")
-                logger.debug("Read 1 byte from stream...")
-                try:
-                    next(data_iter)  # 读取一个字节
-                except StopIteration:
-                    logger.debug("Please wait for a moment before downloading")
-                    return LanZouCloud.FAILED
-                resp_ = self._get(info.durl, stream=True)  # 再请求一次试试
-                if not resp_:
-                    return LanZouCloud.FAILED
-                content_length = resp_.headers.get('Content-Length', None)
-                logger.debug(f"Content-Length: {content_length}")
+        print("down_file_by_url Content-Length:", content_length)
 
         total_size = int(content_length)
 
         if share_url == task.url:  # 下载单文件
             task.total_size = total_size
-        file_path = task.path + os.sep + info.name.replace("*", "_")  # 替换文件名中的 *
+        #  不支持后缀文件重命名 .xxx.enc删除 .enc后缀
+        rename = re.sub(r"(\.\w+)\.enc", r"\1", info.name.replace("*", "_"))  # 替换文件名中的 *
+        logger.error(f"new fileName {rename}")
+        file_path = task.path + os.sep + rename
         logger.debug(f'Save file to file_path={file_path}')
         now_size = 0
         if os.path.exists(file_path):
             now_size = os.path.getsize(file_path)  # 本地已经下载的文件大小
+            print("down_file_by_url exist ", task.now_size, now_size)
             task.now_size += now_size
             callback()
             if now_size >= total_size:
+                print("down_file_by_url exist full file ")
                 logger.debug(f'File file_path={file_path} local already exist!')
                 return LanZouCloud.SUCCESS
 
         chunk_size = 1024 * 64  # 4096
-        last_512_bytes = b''  # 用于识别文件是否携带真实文件名信息
         headers = {**self._headers, 'Range': 'bytes=%d-' % now_size}
         resp = self._get(info.durl, stream=True, headers=headers, timeout=None)
 
@@ -1037,20 +1071,7 @@ class LanZouCloud(object):
                     now_size += len(chunk)
                     task.now_size += len(chunk)
                     callback()
-                    if total_size - now_size < 512:
-                        last_512_bytes += chunk
-        # 尝试解析文件报尾
-        file_info = un_serialize(last_512_bytes[-512:])
-        if file_info is not None and 'padding' in file_info:  # 大文件的记录文件也可以反序列化出 name,但是没有 padding
-            real_name = file_info['name']
-            new_file_path = task.path + os.sep + real_name
-            logger.debug(f"Find meta info: real_name={real_name}")
-            if os.path.exists(new_file_path):
-                os.remove(new_file_path)  # 存在同名文件则删除
-            os.rename(file_path, new_file_path)
-            with open(new_file_path, 'rb+') as f:
-                f.seek(-512, 2)  # 截断最后 512 字节数据
-                f.truncate()
+
         return LanZouCloud.SUCCESS
 
     def get_folder_info_by_url(self, share_url, dir_pwd='') -> FolderDetail:

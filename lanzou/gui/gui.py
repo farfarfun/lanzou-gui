@@ -48,7 +48,8 @@ def open_in_explorer(task):
 
 
 def open_file(task):
-    url = QUrl.fromLocalFile(task.path + "/" + task.name)
+    new_name = re.sub(r"(\.\w+)\.enc", r"\1", task.name)
+    url = QUrl.fromLocalFile(task.path + "/" + new_name)
     if not QDesktopServices.openUrl(url):
         logger.error(f"open file failed{url}", )
 
@@ -660,14 +661,14 @@ class MainWindow(Ui_MainWindow):
         for item in data.values():
             if isinstance(item, DlJob):
                 for task in self._tasks.values():
-                    logger.error("open_downloaded_file state", task.type == 'dl',
-                          task.name == item.name,
-                          task.path == item.path,
-                          task.is_finished(),
-                          task.rate,
-                          task.current,
-                          task.total_size,
-                          )
+                    logger.error("open_downloaded_file state %s %s %s %s %s %s %s " % (task.type == 'dl',
+                                                                                       task.name == item.name,
+                                                                                       task.path == item.path,
+                                                                                       task.is_finished(),
+                                                                                       task.rate,
+                                                                                       task.current,
+                                                                                       task.total_size)
+                                 )
                     if task.type == 'dl' and task.name == item.name and task.path == item.path and task.is_finished():
                         open_file(task)
                         return

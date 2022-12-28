@@ -113,7 +113,7 @@ class Job:
         self._added = added
 
     def is_finished(self) -> bool:
-        return self.rate >= 1000 and self.current >= self.total_file
+        return self.rate >= 1000 and (self.current >= self.total_file or self.current == 1)
 
 
 class DlJob(Job):

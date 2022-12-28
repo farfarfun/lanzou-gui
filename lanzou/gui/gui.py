@@ -398,6 +398,7 @@ class MainWindow(Ui_MainWindow):
             logger.debug(f"manipulator, share tab tasks={tasks}")
             self.call_task_manager_thread(tasks)
         elif tab_page == self.tabWidget.indexOf(self.disk_tab):  # 登录文件界面下载
+            print("登录文件界面下载", infos)
             if not infos:
                 return None
             logger.debug(f"manipulator, disk tab infos={infos}")
@@ -658,14 +659,14 @@ class MainWindow(Ui_MainWindow):
         data = self.model_jobs.itemData(index)
         for item in data.values():
             if isinstance(item, DlJob):
-                print("open_downloaded_file", item)
                 for task in self._tasks.values():
-                    print("open_downloaded_file 222", task, task.type == 'dl')
-                    print("open_downloaded_file 222", task.path, item.path)
                     print("open_downloaded_file state", task.type == 'dl',
                           task.name == item.name,
                           task.path == item.path,
-                          task.is_finished()
+                          task.is_finished(),
+                          task.rate,
+                          task.current,
+                          task.total_size,
                           )
                     if task.type == 'dl' and task.name == item.name and task.path == item.path and task.is_finished():
                         open_file(task)
@@ -788,15 +789,12 @@ class MainWindow(Ui_MainWindow):
 
     def change_disk_dir(self, dir_name):
         """双击切换工作目录"""
-        print("ddddd111", dir_name, dir_name.row())
         item = self.model_disk.item(dir_name.row(), 0)
         if item.text() == "..":  # 返回上级路径
             self.list_refresher.set_values(self._parent_id)
-            print("ddddd222")
             return None
         dir_name = item.data().name  # 文件夹名
         if dir_name in self._folder_list.keys():
-            print("ddddd444")
             folder_id = self._folder_list[dir_name].id
             self.list_refresher.set_values(folder_id)
         else:
@@ -1254,10 +1252,13 @@ class MainWindow(Ui_MainWindow):
 
             # _status.setDisabled(True)
             if task.is_finished():
-                _status.setText("打开文件夹")
-                _status.clicked.connect(lambda: open_in_explorer(task))
+                if task.type == "dl":
+                    _status.setText("打开文件夹")
+                    _status.clicked.connect(lambda: open_in_explorer(task))
+                else:
+                    _status.setText("已完成")
                 _status.setStyleSheet(jobs_btn_completed_style)
-                _action.setText("删除")
+                _action.setText("移除")
                 _action.clicked.connect(lambda: self.del_work_job(task))
                 _action.setStyleSheet(jobs_btn_delete_style)
             elif task.info:
@@ -1285,7 +1286,7 @@ class MainWindow(Ui_MainWindow):
                         _status.setText("排队中")
                         _status.setStyleSheet(jobs_btn_queue_style)
 
-                        _action.setText("删除")
+                        _action.setText("移除")
                         _action.clicked.connect(lambda: self.del_work_job(task))
                     else:
                         _status.setText("暂停中")

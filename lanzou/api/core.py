@@ -494,7 +494,7 @@ class LanZouCloud(object):
             if len(pwd) == 0:
                 return FileDetail(LanZouCloud.LACK_PASSWORD, pwd=pwd, url=share_url)  # 没给提取码直接退出
             # data : 'action=downprocess&sign=AGZRbwEwU2IEDQU6BDRUaFc8DzxfMlRjCjTPlVkWzFSYFY7ATpWYw_c_c&p='+pwd,
-            print("!!!!!!!!!!!!!!!!!!!!")
+            logger.error("!!!!!!!!!!!!!!!!!!!!")
             sign = parse_sign(first_page)
             post_data = {'action': 'downprocess', 'sign': sign, 'p': pwd}
             logger.error(f"get_file_info_by_url post_data={post_data}")
@@ -526,7 +526,8 @@ class LanZouCloud(object):
                                   size=f_size, desc=f_desc, pwd=pwd, url=share_url)
             first_page = remove_notes(first_page.text)
             sign = parse_sign(first_page)
-            print("无密码 sign:", sign)
+
+            logger.error(f"无密码 sign:{sign}")
             post_data = {'action': 'downprocess', 'sign': sign, 'ves': 1}
             # 某些特殊情况 share_url 会出现 webpage 参数, post_data 需要更多参数
             # https://github.com/zaxtyson/LanZouCloud-API/issues/74

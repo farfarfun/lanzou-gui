@@ -398,7 +398,7 @@ class MainWindow(Ui_MainWindow):
             logger.debug(f"manipulator, share tab tasks={tasks}")
             self.call_task_manager_thread(tasks)
         elif tab_page == self.tabWidget.indexOf(self.disk_tab):  # 登录文件界面下载
-            print("登录文件界面下载", infos)
+            logger.error(f"登录文件界面下载{infos}")
             if not infos:
                 return None
             logger.debug(f"manipulator, disk tab infos={infos}")
@@ -660,7 +660,7 @@ class MainWindow(Ui_MainWindow):
         for item in data.values():
             if isinstance(item, DlJob):
                 for task in self._tasks.values():
-                    print("open_downloaded_file state", task.type == 'dl',
+                    logger.error("open_downloaded_file state", task.type == 'dl',
                           task.name == item.name,
                           task.path == item.path,
                           task.is_finished(),

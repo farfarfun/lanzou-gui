@@ -7,6 +7,7 @@ import os
 
 __all__ = ['logger', 'SRC_DIR', 'CONFIG_FILE', 'DL_DIR', 'BG_IMG', 'USER_HOME']
 
+LOG_TO_CONSOLE = False
 # 全局常量: USER_HOME, DL_DIR, SRC_DIR, BG_IMG, CONFIG_FILE
 USER_HOME = os.path.expanduser('~')
 if os.name == 'nt':  # Windows
@@ -40,3 +41,7 @@ logging.basicConfig(level=logging.ERROR,
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+if LOG_TO_CONSOLE:
+    console_handler = logging.StreamHandler()
+    logger.addHandler(console_handler)

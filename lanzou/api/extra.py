@@ -24,7 +24,7 @@ def get_short_url(url: str):
         }
 
         resp = requests.post(short_url_server, data=post_data, verify=False, headers=headers, timeout=timeout)
-        print(resp.text)
+        logger.error(resp.text)
         rsp = json.loads(resp.text)
         if rsp:
             short_url = rsp["data"][0]

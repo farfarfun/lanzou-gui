@@ -47,6 +47,9 @@ def open_in_explorer(task):
     QDesktopServices.openUrl(QUrl.fromLocalFile(task.path))
 
 
+def open_file(task):
+    QDesktopServices.openUrl(QUrl.fromLocalFile(task.path + "/" + task.name))
+
 class MainWindow(Ui_MainWindow):
 
     def __init__(self):
@@ -610,6 +613,7 @@ class MainWindow(Ui_MainWindow):
         elif tab == "jobs":
             model = self.model_jobs
             table = self.table_jobs
+            table.doubleClicked.connect(self.open_downloaded_file)
         else:
             logger.error(f"Gui config_tableview: tab={tab}")
             return None
@@ -642,9 +646,28 @@ class MainWindow(Ui_MainWindow):
         table.horizontalHeader().resizeSection(2, 90)
         # 设置第一列宽度自动调整，充满屏幕
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+
         if tab != "rec" and tab != "jobs":
             table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)  # 允许右键产生子菜单
             table.customContextMenuRequested.connect(self.generateMenu)  # 右键菜单
+
+    def open_downloaded_file(self, index):
+        data = self.model_jobs.itemData(index)
+        for item in data.values():
+            if isinstance(item, DlJob):
+                print("open_downloaded_file", item)
+                for task in self._tasks.values():
+                    print("open_downloaded_file 222", task,task.type == 'dl')
+                    print("open_downloaded_file 222", task.path, item.path)
+                    print("open_downloaded_file state", task.type == 'dl',
+                          task.name == item.name,
+                          task.path == item.path,
+                          task.is_finished()
+                          )
+                    if task.type == 'dl' and task.name == item.name and task.path == item.path and task.is_finished():
+                        open_file(task)
+                        return
+                return
 
     def call_rename_mkdir_worker(self, infos):
         """重命名、修改简介与新建文件夹"""
@@ -748,7 +771,7 @@ class MainWindow(Ui_MainWindow):
             self.more_info_worker.set_values(info, emit_link=True)
 
     def call_update_desc_pwd(self, infos):
-        '''更新 desc、pwd'''
+        """更新 desc、pwd"""
         self.rename_dialog.set_values(infos)
         self.set_pwd_dialog.set_values(infos)
 
@@ -762,13 +785,19 @@ class MainWindow(Ui_MainWindow):
 
     def change_disk_dir(self, dir_name):
         """双击切换工作目录"""
-        if self.model_disk.item(dir_name.row(), 0).text() == "..":  # 返回上级路径
+        print("ddddd111", dir_name,dir_name.row())
+        item = self.model_disk.item(dir_name.row(), 0)
+        if item.text() == "..":  # 返回上级路径
             self.list_refresher.set_values(self._parent_id)
+            print("ddddd222")
             return None
-        dir_name = self.model_disk.item(dir_name.row(), 0).data().name  # 文件夹名
+        dir_name = item.data().name  # 文件夹名
         if dir_name in self._folder_list.keys():
+            print("ddddd444")
             folder_id = self._folder_list[dir_name].id
             self.list_refresher.set_values(folder_id)
+        else:
+            self.call_multi_manipulator("download")
 
     def call_upload(self, tasks: dict):
         """上传文件(夹)"""
@@ -882,7 +911,7 @@ class MainWindow(Ui_MainWindow):
         self.model_rec.removeRows(0, self.model_rec.rowCount())  # 清理旧的内容
         file_count = len(file_lists)
         folder_count = len(dir_lists)
-        if ((not dir_lists) and (not file_lists)) or (file_count == 0 and folder_count == 0):
+        if (not dir_lists and not file_lists) or (file_count == 0 and folder_count == 0):
             self.show_status("回收站为空！", 4000)
             return
         name_header = ["文件夹{}个".format(folder_count), ] if folder_count else []
@@ -1212,8 +1241,8 @@ class MainWindow(Ui_MainWindow):
             name.setToolTip(txt)
             name.setData(task)
             rate = "{:5.1f}%".format(task.rate / 10)
-            precent = QStandardItem(rate)  # precent
-            self.model_jobs.appendRow([name, precent, QStandardItem(""), QStandardItem("")])
+            percent = QStandardItem(rate)  # percent
+            self.model_jobs.appendRow([name, percent, QStandardItem(""), QStandardItem("")])
 
             _status = QPushButton()
             _status.resize(_status.sizeHint())
@@ -1221,8 +1250,8 @@ class MainWindow(Ui_MainWindow):
             _action.resize(_action.sizeHint())
 
             # _status.setDisabled(True)
-            if task.rate >= 1000 and task.current >= task.total_file:
-                _status.setText("已完成")
+            if task.is_finished():
+                _status.setText("打开文件夹")
                 _status.clicked.connect(lambda: open_in_explorer(task))
                 _status.setStyleSheet(jobs_btn_completed_style)
                 _action.setText("删除")

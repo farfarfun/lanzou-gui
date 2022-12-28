@@ -3,7 +3,7 @@
 <img src="https://pc.woozooo.com/img/logo2.gif" width="200">
 </p>
 
-<h1 align="center">- 蓝奏云 GUI -</h1>
+<h1 align="center">- 蓝奏云 GUI - 优化版 -</h1>
 
 <p align="center">
 <img src="https://img.shields.io/badge/support-Windows-blue?logo=Windows">
@@ -61,6 +61,8 @@ python >= 3.6。
 
 
 # Licenses
+
+lanzou-gui: Copyright (c) [Leon406](https://gitee.com/Leon406/). See the [MIT LICENSE](https://github.com/Leon406/lanzou-gui/blob/master/LICENSE) for details.
 
 lanzou-gui: Copyright (c) [rachpt](https://gitee.com/rachpt/). See the [MIT LICENSE](https://github.com/rachpt/lanzou-gui/blob/master/LICENSE) for details.
 

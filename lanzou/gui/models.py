@@ -112,6 +112,9 @@ class Job:
     def added(self, added):
         self._added = added
 
+    def is_finished(self) -> bool:
+        return self.rate >= 1000 and self.current >= self.total_file
+
 
 class DlJob(Job):
     def __init__(self, infos, path, total_file=1):
@@ -138,6 +141,9 @@ class DlJob(Job):
     @path.setter
     def path(self, path):
         self._path = path
+
+    def __str__(self):
+        return f"DlJob: name={self.name}, pwd={self.pwd} path= {self.path}"
 
 
 class UpJob(Job):
@@ -342,6 +348,10 @@ class Infos:
     def new_id(self, new_id):
         self._new_fid = new_id
 
+    def __str__(self):
+        return f"Infos: name={self._name}, is_file={self._is_file}, url={self._url}, size={self._size}, " \
+               f"time={self._time}, durl={self._durl}"
+
 
 class FileInfos(Infos):
     def __init__(self, file):
@@ -357,6 +367,7 @@ class FileInfos(Infos):
     @property
     def has_des(self):
         return self._has_des
+
 
 
 class FolderInfos(Infos):

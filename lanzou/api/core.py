@@ -5,6 +5,7 @@
 import os
 import pickle
 import shutil
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from random import shuffle, uniform
@@ -525,7 +526,7 @@ class LanZouCloud(object):
                                   size=f_size, desc=f_desc, pwd=pwd, url=share_url)
             first_page = remove_notes(first_page.text)
             sign = parse_sign(first_page)
-            print("无密码 sign::", sign)
+            print("无密码 sign:", sign)
             post_data = {'action': 'downprocess', 'sign': sign, 'ves': 1}
             # 某些特殊情况 share_url 会出现 webpage 参数, post_data 需要更多参数
             # https://github.com/zaxtyson/LanZouCloud-API/issues/74
@@ -1051,7 +1052,7 @@ class LanZouCloud(object):
                 f.truncate()
         return LanZouCloud.SUCCESS
 
-    def get_folder_info_by_url(self, share_url, dir_pwd='') -> FolderDetail():
+    def get_folder_info_by_url(self, share_url, dir_pwd='') -> FolderDetail:
         """获取文件夹里所有文件的信息"""
         if is_file_url(share_url):
             return FolderDetail(LanZouCloud.URL_INVALID)
@@ -1075,7 +1076,7 @@ class LanZouCloud(object):
 
         try:
             # 获取文件需要的参数
-            print("======")
+            logger.info("====== 获取文件需要的参数")
             html = remove_notes(html)
             lx = re.findall(r"'lx':'?(\d)'?,", html)[0]
             t = re.findall(r"var \w{6} = '(\d{10})';", html)[0]
@@ -1085,6 +1086,7 @@ class LanZouCloud(object):
             folder_name = parse_folder_name(html)
             folder_time = parse_folder_time(html)
             folder_desc = parse_folder_desc(html)
+            logger.info("====== 获取文件需要的参数", lx, t, k, folder_id, folder_name, folder_time, folder_desc)
         except IndexError:
             logger.error("IndexError")
             return FolderDetail(LanZouCloud.FAILED)
@@ -1096,8 +1098,8 @@ class LanZouCloud(object):
             r'mbxfolder"><a href="(.+?)".+class="filename">(.+?)<div class="filesize">(.*?)</div>', html)
         for url, _, _ in all_sub_folders:
             url = self._host_url + url
-            sub_forder_detail = self.get_folder_info_by_url(url, dir_pwd)
-            sub_folders.append(sub_forder_detail)
+            sub_folder_detail = self.get_folder_info_by_url(url, dir_pwd)
+            sub_folders.append(sub_folder_detail)
 
         # 提取改文件夹下全部文件
         page = 1
@@ -1105,10 +1107,19 @@ class LanZouCloud(object):
         while True:
             try:
                 post_data = {'lx': lx, 'pg': page, 'k': k, 't': t, 'fid': folder_id, 'pwd': dir_pwd}
-                resp = self._post(self._host_url + '/filemoreajax.php', data=post_data, headers=self._headers).json()
-            except requests.RequestException:
+                post = self._post(self._host_url + '/filemoreajax.php', data=post_data, headers=self._headers)
+                logger.info(f"====== 获取文件需要的参数 post {post.text}")
+                if not post.text:
+                    logger.error("====!!!!!!!!!!!!")
+                    continue
+                resp = post.json()
+                logger.info(f"====== 获取文件需要的参数 resp {resp}")
+            except requests.RequestException as e:
+                logger.error(e)
                 return FolderDetail(LanZouCloud.NETWORK_ERROR)
             if resp['zt'] == 1:  # 成功获取一页文件信息
+                file_count = len(resp["text"])
+                logger.info("文件数量", file_count)
                 for f in resp["text"]:
                     name = f['name_all'].replace("&amp;", "&")
                     if "*" in name:
@@ -1121,13 +1132,20 @@ class LanZouCloud(object):
                             type=f["name_all"].split('.')[-1],  # 文件格式
                             url=self._host_url + "/" + f["id"]  # 文件分享链接
                         ))
+                #  单页数量50, 提前终止
+                if file_count < 50:
+                    break
                 page += 1  # 下一页
+                # 服务器请求1s限制
+                time.sleep(1)
                 continue
             elif resp['zt'] == 2:  # 已经拿到全部的文件信息
                 break
             elif resp['zt'] == 3:  # 提取码错误
                 return FolderDetail(LanZouCloud.PASSWORD_ERROR)
-            elif resp["zt"] == 4:
+            elif resp["zt"] == 4:  # '请刷新，重试
+                # 避免频繁请求
+                time.sleep(0.1)
                 continue
             else:
                 return FolderDetail(LanZouCloud.FAILED)  # 其它未知错误

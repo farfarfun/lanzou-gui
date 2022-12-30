@@ -50,7 +50,6 @@ def open_file(task):
 
 def time_table_item(data):
     try:
-        print(data.time,time_stamp(data.time))
         item = QStandardItem(data.time)
         item.setData(time_stamp(data.time), Qt.ItemDataRole.UserRole)
     except Exception as e:
@@ -582,12 +581,10 @@ class MainWindow(Ui_MainWindow):
                 txt = txt + dl_count_style + str(infos.downs) + "</span>"
             name.setText(txt)
             name.setToolTip(tips)
-            # time = time_format(infos.time) if self.time_fmt else infos.time
             size = QStandardItem(infos.size)
             size.setData(format_size_int(infos.size), Qt.ItemDataRole.UserRole)  # 配合MyStandardItem实现正确排序
-            print("rec show_file_and_folder_lists dir")
+            print("show_file_and_folder_lists dir")
             self.model_disk.appendRow([name, size, time_table_item(infos)])
-            # self.model_disk.appendRow([name, size, QStandardItem(time)])
         for row in range(self.model_disk.rowCount()):  # 右对齐
             self.model_disk.item(row, 1).setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self.model_disk.item(row, 2).setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
@@ -665,20 +662,23 @@ class MainWindow(Ui_MainWindow):
     def open_downloaded_file(self, index):
         data = self.model_jobs.itemData(index)
         for item in data.values():
-            if isinstance(item, DlJob):
-                for task in self._tasks.values():
-                    logger.error("open_downloaded_file state %s %s %s %s %s %s %s " % (task.type == 'dl',
-                                                                                       task.name == item.name,
-                                                                                       task.path == item.path,
-                                                                                       task.is_finished(),
-                                                                                       task.rate,
-                                                                                       task.current,
-                                                                                       task.total_size)
-                                 )
-                    if task.type == 'dl' and task.name == item.name and task.path == item.path and task.is_finished():
-                        open_file(task)
-                        return
-                return
+            if not isinstance(item, DlJob):
+                continue
+            for task in self._tasks.values():
+                if not isinstance(task, DlJob):
+                    continue
+                logger.error("open_downloaded_file state %s %s %s %s %s %s %s " % (task.type == 'dl',
+                                                                                   task.name == item.name,
+                                                                                   task.path == item.path,
+                                                                                   task.is_finished(),
+                                                                                   task.rate,
+                                                                                   task.current,
+                                                                                   task.total_size)
+                             )
+                if task.type == 'dl' and task.name == item.name and task.path == item.path and task.is_finished():
+                    open_file(task)
+                    return
+
 
     def call_rename_mkdir_worker(self, infos):
         """重命名、修改简介与新建文件夹"""
@@ -1078,9 +1078,7 @@ class MainWindow(Ui_MainWindow):
             else:  # 单文件
                 name = QStandardItem(set_file_icon(infos.name), infos.name)
                 name.setData(ShareItem(item=infos))
-                time = time_format(infos.time) if self.time_fmt else infos.time
                 print("show url dir")
-                # self.model_share.appendRow([name, QStandardItem(infos.size), QStandardItem(time)])
                 item = time_table_item(infos)
                 self.model_share.appendRow([name, QStandardItem(infos.size), item])
                 self.model_share.setHorizontalHeaderLabels(["文件名", "大小", "时间"])

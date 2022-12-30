@@ -113,7 +113,7 @@ class Job:
         self._added = added
 
     def is_finished(self) -> bool:
-        return self.rate >= 1000 and (self.current >= self.total_file or self.current == 1)
+        return self.rate >= 1000 and (self.current >= self.total_file or self.current == 1 and self.total_file != 0)
 
 
 class DlJob(Job):
@@ -175,6 +175,9 @@ class UpJob(Job):
     @property
     def desc(self):
         return self._desc
+
+    def __str__(self):
+        return f"UpJob: fid={self.fid}, folder={self.folder},name={self.name}, pwd={self.pwd} desc= {self.desc}"
 
 
 class Tasks(object):

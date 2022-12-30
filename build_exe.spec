@@ -8,7 +8,7 @@
 import time
 import re
 
-pattern_binary = "Qt5|Qt6Pdf.dll|Qt6Network.dll"
+pattern_binary = "Qt5|Qt6Pdf.dll|Qt6Network.dll|opengl32sw.dll"
 regex_binary = re.compile(pattern_binary)
 pattern_data = "Qt5|-info"
 regex_data = re.compile(pattern_data)
@@ -64,6 +64,7 @@ coll = COLLECT(exe,
                     'vcruntime140_1.dll',
                     'msvcp140_1.dll',
                     'msvcp140.dll',
+                    'opengl32sw.dll',
                 ],
                name='lanzou-gui')
 

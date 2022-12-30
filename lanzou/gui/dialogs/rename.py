@@ -22,7 +22,7 @@ class RenameDialog(QDialog):
         self.update_text()  # 更新界面
 
     def initUI(self):
-        self.setWindowIcon(QIcon(SRC_DIR + "desc.ico"))
+        self.setWindowIcon(QIcon(SRC_DIR + "desc.png"))
         self.lb_name = QLabel()
         self.lb_name.setText("文件夹名：")
         self.lb_name.setAlignment(

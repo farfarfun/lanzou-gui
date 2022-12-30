@@ -114,7 +114,7 @@ class InfoDialog(QDialog):
         self.tx_short.setPlaceholderText("单击获取")
 
     def initUI(self):
-        self.setWindowIcon(QIcon(SRC_DIR + "share.ico"))
+        self.setWindowIcon(QIcon(SRC_DIR + "share.png"))
         self.setWindowTitle("文件信息")
         self.buttonBox = QDialogButtonBox()
         self.buttonBox.setOrientation(Qt.Orientation.Horizontal)

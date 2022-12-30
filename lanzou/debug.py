@@ -25,7 +25,7 @@ else:  # Linux and MacOS ...
         os.makedirs(root_dir)
     DL_DIR = USER_HOME + os.sep + 'Downloads'
 
-SRC_DIR = root_dir + os.sep + "src" + os.sep
+SRC_DIR = root_dir + os.sep + "resources" + os.sep
 BG_IMG = (SRC_DIR + "default_background_img.jpg").replace('\\', '/')
 CONFIG_FILE = root_dir + os.sep + 'config.pkl'
 

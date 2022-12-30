@@ -18,7 +18,7 @@ def set_file_icon(name):
     if os.path.isfile(ico_path):
         return QIcon(ico_path)
     else:
-        return QIcon(SRC_DIR + "file.ico")
+        return QIcon(SRC_DIR + "file.png")
 
 
 class QDoublePushButton(QPushButton):

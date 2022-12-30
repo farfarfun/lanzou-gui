@@ -103,7 +103,7 @@ class MergeFileDialog(QDialog):
 
     def initUI(self):
         self.setWindowTitle("合并文件")
-        self.setWindowIcon(QIcon(SRC_DIR + "upload.ico"))
+        self.setWindowIcon(QIcon(SRC_DIR + "upload.png"))
         self.logo = QLabel()
         self.logo.setPixmap(QPixmap(SRC_DIR + "logo3.gif"))
         self.logo.setStyleSheet("background-color:rgb(0,153,255);")

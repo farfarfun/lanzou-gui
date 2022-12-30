@@ -20,7 +20,7 @@ print("start",start)
 a = Analysis(['main.py'],
              pathex=['.'],
              binaries=[],
-             datas=[],
+             datas=[('resources', 'resources')],
              hiddenimports=['PyQt5','bcrypt'],
              hookspath=[],
              runtime_hooks=[],

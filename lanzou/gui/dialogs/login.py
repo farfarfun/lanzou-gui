@@ -78,7 +78,7 @@ class LoginDialog(QDialog):
 
     def initUI(self):
         self.setWindowTitle("登录蓝奏云")
-        self.setWindowIcon(QIcon(SRC_DIR + "login.ico"))
+        self.setWindowIcon(QIcon(SRC_DIR + "login.png"))
         logo = QLabel()
         logo.setPixmap(QPixmap(SRC_DIR + "logo3.gif"))
         logo.setStyleSheet("background-color:rgb(0,153,255);")
@@ -189,7 +189,7 @@ class LoginDialog(QDialog):
             vbox.addWidget(lb_line_2)
             if self.user_num > 1:
                 self.del_user_btn = QPushButton("删除账户")
-                self.del_user_btn.setIcon(QIcon(SRC_DIR + "delete.ico"))
+                self.del_user_btn.setIcon(QIcon(SRC_DIR + "delete.png"))
                 self.del_user_btn.setStyleSheet("QPushButton {min-width: 180px;max-width: 180px;}")
                 self.del_user_btn.clicked.connect(self.call_del_chose_user)
                 vbox.addWidget(self.del_user_btn)

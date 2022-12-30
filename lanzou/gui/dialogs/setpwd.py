@@ -26,7 +26,7 @@ class SetPwdDialog(QDialog):
 
     def initUI(self):
         self.setWindowTitle("请稍等……")
-        self.setWindowIcon(QIcon(SRC_DIR + "password.ico"))
+        self.setWindowIcon(QIcon(SRC_DIR + "password.png"))
         self.lb_oldpwd = QLabel()
         self.lb_oldpwd.setText("当前提取码：")
         self.lb_oldpwd.setAlignment(

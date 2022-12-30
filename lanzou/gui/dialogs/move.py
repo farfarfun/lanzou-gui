@@ -39,7 +39,7 @@ class MoveFileDialog(QDialog):
 
     def initUI(self):
         self.setWindowTitle("移动文件(夹)")
-        self.setWindowIcon(QIcon(SRC_DIR + "move.ico"))
+        self.setWindowIcon(QIcon(SRC_DIR + "move.png"))
         self.lb_name = QLabel()
         self.lb_name.setText("文件(夹)名：")
         self.lb_name.setAlignment(

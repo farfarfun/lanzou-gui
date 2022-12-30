@@ -54,7 +54,7 @@ class UploadDialog(QDialog):
 
     def initUI(self):
         self.setWindowTitle("上传文件")
-        self.setWindowIcon(QIcon(SRC_DIR + "upload.ico"))
+        self.setWindowIcon(QIcon(SRC_DIR + "upload.png"))
         self.logo = QLabel()
         self.logo.setPixmap(QPixmap(SRC_DIR + "logo3.gif"))
         self.logo.setStyleSheet("background-color:rgb(0,153,255);")
@@ -70,12 +70,12 @@ class UploadDialog(QDialog):
         self.btn_chooseMultiFile = QPushButton("选择多文件", self)
         self.btn_chooseDir.setObjectName("btn_chooseMultiFile")
         self.btn_chooseMultiFile.setObjectName("btn_chooseMultiFile")
-        self.btn_chooseMultiFile.setIcon(QIcon(SRC_DIR + "file.ico"))
+        self.btn_chooseMultiFile.setIcon(QIcon(SRC_DIR + "file.png"))
 
         # btn 3
         self.btn_deleteSelect = QPushButton("移除", self)
         self.btn_deleteSelect.setObjectName("btn_deleteSelect")
-        self.btn_deleteSelect.setIcon(QIcon(SRC_DIR + "delete.ico"))
+        self.btn_deleteSelect.setIcon(QIcon(SRC_DIR + "delete.png"))
         self.btn_deleteSelect.setToolTip("按 Delete 移除选中文件")
 
         # 列表
@@ -146,7 +146,7 @@ class UploadDialog(QDialog):
         self.model.removeRows(0, self.model.rowCount())
         for item in self.selected:
             if os.path.isfile(item):
-                self.model.appendRow(QStandardItem(QIcon(SRC_DIR + "file.ico"), item))
+                self.model.appendRow(QStandardItem(QIcon(SRC_DIR + "file.png"), item))
             else:
                 self.model.appendRow(QStandardItem(QIcon(SRC_DIR + "folder.gif"), item))
             self.set_size()

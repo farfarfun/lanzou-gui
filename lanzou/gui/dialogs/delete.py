@@ -19,7 +19,7 @@ class DeleteDialog(QDialog):
 
     def initUI(self):
         self.setWindowTitle("确认删除")
-        self.setWindowIcon(QIcon(SRC_DIR + "delete.ico"))
+        self.setWindowIcon(QIcon(SRC_DIR + "delete.png"))
         self.layout = QVBoxLayout()
         self.list_view = QListView()
         self.list_view.setViewMode(QListView.ViewMode.ListMode)

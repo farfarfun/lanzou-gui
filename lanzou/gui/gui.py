@@ -29,13 +29,7 @@ __ALL__ = ['MainWindow']
 
 
 def get_logo_path():
-    """释放图片，并返回 logo 路径"""
-    if not os.path.isdir(SRC_DIR) or not os.path.isfile(SRC_DIR + "file.ico"):
-        from lanzou.gui.src import release_src
-
-        os.makedirs(SRC_DIR, exist_ok=True)
-        release_src(SRC_DIR)
-
+    """返回 logo 路径"""
     return SRC_DIR + 'lanzou_logo2.png'
 
 
@@ -540,7 +534,7 @@ class MainWindow(Ui_MainWindow):
         self.model_disk.setHorizontalHeaderLabels(["/".join(name_header), "大小", "时间"])
         folder_ico = QIcon(SRC_DIR + "folder.gif")
         desc_style = ' <span style="font-size:14px;color:green;text-align:right">'
-        pwd_ico = f' <img src="{SRC_DIR}keys.ico" width="14" height="14" />'
+        pwd_ico = f' <img src="{SRC_DIR}keys.png" width="14" height="14" />'
         dl_count_style = ' <span style="font-size:14px;color:red;text-align:right">'
         if self._work_id != -1:
             _back = QStandardItem(folder_ico, "..")
@@ -851,18 +845,18 @@ class MainWindow(Ui_MainWindow):
                 if btn.text() == "全选":
                     table.selectAll()
                     btn.setText("取消")
-                    btn.setIcon(QIcon(SRC_DIR + "select_none.ico"))
+                    btn.setIcon(QIcon(SRC_DIR + "select_none.png"))
                 elif btn.text() == "取消":
                     table.clearSelection()
                     btn.setText("全选")
-                    btn.setIcon(QIcon(SRC_DIR + "select_all.ico"))
+                    btn.setIcon(QIcon(SRC_DIR + "select_all.png"))
             elif action == "cancel":  # 点击列表其中一个就表示放弃全选
                 btn.setText("全选")
-                btn.setIcon(QIcon(SRC_DIR + "select_all.ico"))
+                btn.setIcon(QIcon(SRC_DIR + "select_all.png"))
             else:
                 table.selectAll()
                 btn.setText("取消")
-                btn.setIcon(QIcon(SRC_DIR + "select_none.ico"))
+                btn.setIcon(QIcon(SRC_DIR + "select_none.png"))
 
     def call_delete_shortcut(self):
         if self.tabWidget.currentIndex() == self.tabWidget.indexOf(self.disk_tab):
@@ -876,16 +870,16 @@ class MainWindow(Ui_MainWindow):
     def init_disk_ui(self):
         self.model_disk = QStandardItemModel(1, 3)
         self.config_tableview("disk")
-        self.btn_disk_delete.setIcon(QIcon(SRC_DIR + "delete.ico"))
+        self.btn_disk_delete.setIcon(QIcon(SRC_DIR + "delete.png"))
         self.btn_disk_delete.setToolTip("按下 Ctrl + D 删除选中文件")
-        self.btn_disk_dl.setIcon(QIcon(SRC_DIR + "downloader.ico"))
+        self.btn_disk_dl.setIcon(QIcon(SRC_DIR + "downloader.png"))
         self.btn_disk_dl.setToolTip("按下 Ctrl + J 下载选中文件")
-        self.btn_disk_select_all.setIcon(QIcon(SRC_DIR + "select_all.ico"))
+        self.btn_disk_select_all.setIcon(QIcon(SRC_DIR + "select_all.png"))
         self.btn_disk_select_all.setToolTip("按下 Ctrl/Alt + A 全选或则取消全选")
         self.btn_disk_select_all.clicked.connect(lambda: self.select_all_btn("reverse"))
         self.table_disk.clicked.connect(lambda: self.select_all_btn("cancel"))
         self.btn_disk_dl.clicked.connect(lambda: self.call_multi_manipulator("download"))
-        self.btn_disk_mkdir.setIcon(QIcon(SRC_DIR + "add_folder.ico"))
+        self.btn_disk_mkdir.setIcon(QIcon(SRC_DIR + "add_folder.png"))
         self.btn_disk_mkdir.clicked.connect(self.call_mkdir)
         self.btn_disk_delete.clicked.connect(self.call_remove_files)
         # 文件拖拽上传
@@ -944,19 +938,19 @@ class MainWindow(Ui_MainWindow):
         self.model_rec = QStandardItemModel(1, 3)
         self.config_tableview("rec")
         self.table_rec.doubleClicked.connect(self.call_rec_folder_dialog)
-        self.btn_rec_select_all.setIcon(QIcon(SRC_DIR + "select_all.ico"))
+        self.btn_rec_select_all.setIcon(QIcon(SRC_DIR + "select_all.png"))
         self.btn_rec_select_all.clicked.connect(lambda: self.select_all_btn("reverse"))
         self.btn_rec_delete.clicked.connect(lambda: self.call_multi_manipulator("delete"))
-        self.btn_rec_delete.setIcon(QIcon(SRC_DIR + "delete.ico"))
+        self.btn_rec_delete.setIcon(QIcon(SRC_DIR + "delete.png"))
         self.btn_recovery.clicked.connect(lambda: self.call_multi_manipulator("recovery"))
-        self.btn_recovery.setIcon(QIcon(SRC_DIR + "rec_folder.ico"))
+        self.btn_recovery.setIcon(QIcon(SRC_DIR + "rec_folder.png"))
         self.btn_rec_delete.setToolTip("彻底删除选中文件(夹)")
         self.btn_recovery.setToolTip("恢复选中文件(夹)")
         self.btn_recovery_all.clicked.connect(lambda: self.call_multi_manipulator("recovery_all"))
-        self.btn_recovery_all.setIcon(QIcon(SRC_DIR + "rec_folder.ico"))
+        self.btn_recovery_all.setIcon(QIcon(SRC_DIR + "rec_folder.png"))
         self.btn_recovery_all.setToolTip("恢复全部")
         self.btn_rec_clean.clicked.connect(lambda: self.call_multi_manipulator("clean"))
-        self.btn_rec_clean.setIcon(QIcon(SRC_DIR + "rec_bin.ico"))
+        self.btn_rec_clean.setIcon(QIcon(SRC_DIR + "rec_bin.png"))
         self.btn_rec_clean.setToolTip("清理回收站全部")
         self.btn_rec_expire_files.setToolTip("暂时无效！")
 
@@ -1158,8 +1152,8 @@ class MainWindow(Ui_MainWindow):
         self.line_share_pwd.setFixedWidth(100)  # 提取码输入框 宽度
         self.btn_extract.clicked.connect(self.call_get_shared_info)
         self.btn_share_dl.clicked.connect(lambda: self.call_multi_manipulator("download"))
-        self.btn_share_dl.setIcon(QIcon(SRC_DIR + "downloader.ico"))
-        self.btn_share_select_all.setIcon(QIcon(SRC_DIR + "select_all.ico"))
+        self.btn_share_dl.setIcon(QIcon(SRC_DIR + "downloader.png"))
+        self.btn_share_select_all.setIcon(QIcon(SRC_DIR + "select_all.png"))
         self.btn_share_select_all.clicked.connect(lambda: self.select_all_btn("reverse"))
         self.table_share.clicked.connect(lambda: self.select_all_btn("cancel"))  # 全选按钮
 
@@ -1222,8 +1216,8 @@ class MainWindow(Ui_MainWindow):
     def show_jobs_lists(self):
         """显示任务列表"""
         self.model_jobs.removeRows(0, self.model_jobs.rowCount())  # 清理旧的内容
-        download_ico = QIcon(SRC_DIR + "download.ico")
-        upload_ico = QIcon(SRC_DIR + "upload.ico")
+        download_ico = QIcon(SRC_DIR + "download.png")
+        upload_ico = QIcon(SRC_DIR + "upload.png")
         path_style = ' <span style="font-size:14px;color:green;text-align:right">'
         error_style = ' <span style="font-size:14px;color:red;text-align:right">'
         _index = 0

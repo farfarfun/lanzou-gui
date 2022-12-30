@@ -279,40 +279,40 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
     def create_left_menus(self):
         self.left_menus = QtWidgets.QMenu()
         self.left_menu_share_url = self.left_menus.addAction("外链分享地址等")
-        self.left_menu_share_url.setIcon(QtGui.QIcon(SRC_DIR + "share.ico"))
+        self.left_menu_share_url.setIcon(QtGui.QIcon(SRC_DIR + "share.png"))
         self.left_menu_rename_set_desc = self.left_menus.addAction("修改文件描述（支持批量）")
-        self.left_menu_rename_set_desc.setIcon(QtGui.QIcon(SRC_DIR + "desc.ico"))
+        self.left_menu_rename_set_desc.setIcon(QtGui.QIcon(SRC_DIR + "desc.png"))
         self.left_menu_set_pwd = self.left_menus.addAction("设置提取码（支持批量）")
-        self.left_menu_set_pwd.setIcon(QtGui.QIcon(SRC_DIR + "password.ico"))
+        self.left_menu_set_pwd.setIcon(QtGui.QIcon(SRC_DIR + "password.png"))
         self.left_menu_move = self.left_menus.addAction("移动（支持批量）")
-        self.left_menu_move.setIcon(QtGui.QIcon(SRC_DIR + "move.ico"))
+        self.left_menu_move.setIcon(QtGui.QIcon(SRC_DIR + "move.png"))
         self.left_menu_copy = self.left_menus.addAction("复制分享链接")
-        self.left_menu_copy.setIcon(QtGui.QIcon(SRC_DIR + "count.ico"))
+        self.left_menu_copy.setIcon(QtGui.QIcon(SRC_DIR + "count.png"))
 
     def init_main_menu(self):
-        self.login.setIcon(QtGui.QIcon(SRC_DIR + "login.ico"))
+        self.login.setIcon(QtGui.QIcon(SRC_DIR + "login.png"))
         self.login.setShortcut("Ctrl+L")
-        self.logout.setIcon(QtGui.QIcon(SRC_DIR + "logout.ico"))
+        self.logout.setIcon(QtGui.QIcon(SRC_DIR + "logout.png"))
         self.logout.setShortcut("Ctrl+Q")  # 登出快捷键
         self.logout.setEnabled(False)  # 初始状态
-        self.download.setIcon(QtGui.QIcon(SRC_DIR + "download.ico"))
+        self.download.setIcon(QtGui.QIcon(SRC_DIR + "download.png"))
         self.download.setShortcut("Ctrl+J")
         self.download.setEnabled(False)  # 初始状态
-        self.delete.setIcon(QtGui.QIcon(SRC_DIR + "delete.ico"))
+        self.delete.setIcon(QtGui.QIcon(SRC_DIR + "delete.png"))
         self.delete.setShortcut("Ctrl+D")
         self.delete.setEnabled(False)  # 初始状态
-        self.show_toolbar.setIcon(QtGui.QIcon(SRC_DIR + "password.ico"))
+        self.show_toolbar.setIcon(QtGui.QIcon(SRC_DIR + "password.png"))
         self.show_toolbar.setShortcut("Ctrl+T")
         self.toolbar.close()  # 工具栏初始状态
         self.merge_file.setIcon(QtGui.QIcon(SRC_DIR + "folder.gif"))
         self.merge_file.setShortcut("Ctrl+M")
-        self.setting_menu.setIcon(QtGui.QIcon(SRC_DIR + "settings.ico"))
+        self.setting_menu.setIcon(QtGui.QIcon(SRC_DIR + "settings.png"))
         self.setting_menu.setShortcut("Ctrl+P")
-        self.how.setIcon(QtGui.QIcon(SRC_DIR + "help.ico"))
+        self.how.setIcon(QtGui.QIcon(SRC_DIR + "help.png"))
         self.how.setShortcut("F1")
-        self.about.setIcon(QtGui.QIcon(SRC_DIR + "about.ico"))
+        self.about.setIcon(QtGui.QIcon(SRC_DIR + "about.png"))
         self.about.setShortcut("Ctrl+B")
-        self.upload.setIcon(QtGui.QIcon(SRC_DIR + "upload.ico"))
+        self.upload.setIcon(QtGui.QIcon(SRC_DIR + "upload.png"))
         self.upload.setShortcut("Ctrl+U")  # 上传快捷键
         self.upload.setEnabled(False)  # 初始状态
 

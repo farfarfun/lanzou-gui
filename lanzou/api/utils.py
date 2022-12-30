@@ -7,7 +7,7 @@ import pickle
 import re
 from datetime import timedelta, datetime
 from random import uniform, choices, sample, shuffle, choice
-from typing import Tuple
+from typing import Tuple, Union, Any
 
 import requests
 
@@ -15,7 +15,7 @@ from lanzou.debug import logger
 
 __all__ = ['remove_notes', 'name_format', 'time_format', 'is_name_valid', 'is_file_url',
            'is_folder_url', 'big_file_split', 'un_serialize', 'let_me_upload', 'USER_AGENT',
-           'sum_files_size', 'convert_file_size_to_str', 'calc_acw_sc__v2', 'convert_file_size_to_int']
+           'sum_files_size', 'convert_file_size_to_str', 'calc_acw_sc__v2', 'convert_file_size_to_int', 'time_stamp']
 
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0) Gecko/20100101 Firefox/78.0'
 
@@ -93,6 +93,59 @@ def time_format(time_str: str) -> str:
         return (datetime.today() - timedelta(days=int(days))).strftime('%Y-%m-%d')
     else:
         return time_str
+
+
+reg_number = re.compile("\d+")
+
+
+def time_stamp(time_str: str) -> Union[Union[datetime, timedelta, str], Any]:
+    """输出格式化时间 %Y-%m-%d"""
+    print("time stamp", time_str)
+    numbers = reg_number.findall(time_str)
+    print(numbers)
+    date = datetime.today()
+    if '秒前' in time_str:
+        date = (date - timedelta(seconds=int(numbers[0])))
+    elif '分钟前' in time_str:
+        date = date - timedelta(minutes=int(numbers[0]))
+    elif '小时前' in time_str:
+        date = (date - timedelta(hours=int(numbers[0])))
+    elif '昨天' in time_str:
+        if numbers:
+            date = (date - timedelta(days=1)).replace(hour=int(numbers[0]),
+                                                      minute=int(numbers[1] if len(numbers) == 2 else '0'))
+        else:
+            date = (date - timedelta(days=1)).timestamp()
+    elif '前天' in time_str:
+        if numbers:
+            date = (date - timedelta(days=2)).replace(hour=int(numbers[0]),
+                                                      minute=int(numbers[1] if len(numbers) == 2 else '0'))
+        else:
+            date = (date - timedelta(days=2))
+    elif '天前' in time_str:
+        date = (date - timedelta(days=int(numbers[0])))
+    else:
+        if numbers:
+            date = (date.replace(year=int(numbers[0]),
+                                 month=int(numbers[1] if len(numbers) >= 2 else '1'),
+                                 day=int(numbers[2] if len(numbers) == 3 else '1')
+                                 )
+                    )
+
+    return date.timestamp()
+
+
+if __name__ == '__main__':
+    print(datetime.today())
+    print(time_stamp("5 秒前"))
+    print(time_stamp("5 分钟前"))
+    print(time_stamp("5 小时前"))
+    print(time_stamp("昨天12:"))
+    print(time_stamp("昨天12:15"))
+    print(time_stamp("前天"))
+    print(time_stamp("前天 10"))
+    print(time_stamp("前天 10 : 25"))
+    print(time_stamp("5 天前"))
 
 
 def is_name_valid(filename: str) -> bool:

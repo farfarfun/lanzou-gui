@@ -12,7 +12,7 @@ from lanzou.api import LanZouCloud
 from lanzou.api.models import FolderList
 from lanzou.api.types import RecFolder, FolderDetail, ShareItem
 from lanzou.api.utils import convert_file_size_to_int as format_size_int
-from lanzou.api.utils import time_format
+from lanzou.api.utils import time_format, time_stamp
 from lanzou.debug import logger, USER_HOME, SRC_DIR
 from lanzou.gui import version
 from lanzou.gui.config import config
@@ -46,6 +46,16 @@ def open_file(task):
     url = QUrl.fromLocalFile(task.path + "/" + new_name)
     if not QDesktopServices.openUrl(url):
         logger.error(f"open file failed{url}", )
+
+
+def time_table_item(data):
+    try:
+        print(data.time,time_stamp(data.time))
+        item = QStandardItem(data.time)
+        item.setData(time_stamp(data.time), Qt.ItemDataRole.UserRole)
+    except Exception as e:
+        print("errr", e)
+    return item
 
 
 class MainWindow(Ui_MainWindow):
@@ -572,10 +582,12 @@ class MainWindow(Ui_MainWindow):
                 txt = txt + dl_count_style + str(infos.downs) + "</span>"
             name.setText(txt)
             name.setToolTip(tips)
-            time = time_format(infos.time) if self.time_fmt else infos.time
+            # time = time_format(infos.time) if self.time_fmt else infos.time
             size = QStandardItem(infos.size)
             size.setData(format_size_int(infos.size), Qt.ItemDataRole.UserRole)  # 配合MyStandardItem实现正确排序
-            self.model_disk.appendRow([name, size, QStandardItem(time)])
+            print("rec show_file_and_folder_lists dir")
+            self.model_disk.appendRow([name, size, time_table_item(infos)])
+            # self.model_disk.appendRow([name, size, QStandardItem(time)])
         for row in range(self.model_disk.rowCount()):  # 右对齐
             self.model_disk.item(row, 1).setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             self.model_disk.item(row, 2).setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
@@ -921,13 +933,17 @@ class MainWindow(Ui_MainWindow):
             name.setData(item)
             name.setToolTip("双击查看详情")
             size_ = QStandardItem(item.size)
-            time_ = QStandardItem(item.time)
+            print("rec time_table_item dir")
+            time_ = time_table_item(item)
+            # time_ = QStandardItem(item.time)
             self.model_rec.appendRow([name, size_, time_])
         for item in iter(file_lists):  # 文件
             name = QStandardItem(set_file_icon(item.name), item.name)
             name.setData(item)
             size_ = QStandardItem(item.size)
-            time_ = QStandardItem(item.time)
+            print("rec time_table_item")
+            time_ = time_table_item(item)
+            # time_ = QStandardItem(item.time)
             self.model_rec.appendRow([name, size_, time_])
         for row in range(self.model_rec.rowCount()):  # 右对齐
             self.model_rec.item(row, 1).setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
@@ -1018,9 +1034,13 @@ class MainWindow(Ui_MainWindow):
                     name.setData(set_data)
                     name.setText(pre_root_dir + sub_folder.folder.name + text)
                     if self.time_fmt:
+                        print("___时间格式话___111")
                         time = QStandardItem(time_format(sub_folder.folder.time))
                     else:
-                        time = QStandardItem(sub_folder.folder.time)
+                        print("___时间默认格式___11")
+                        # time = QStandardItem(sub_folder.folder.time)
+                        time = time_table_item(sub_folder.folder)
+
                     size = QStandardItem(sub_folder.folder.size)
                     size.setData(format_size_int(sub_folder.folder.size), Qt.ItemDataRole.UserRole)
                     self.model_share.appendRow([name, size, time])
@@ -1041,7 +1061,14 @@ class MainWindow(Ui_MainWindow):
                 name.setText(pre_root_dir + item.name)
                 size = QStandardItem(item.size)
                 size.setData(format_size_int(item.size), Qt.ItemDataRole.UserRole)
-                time = QStandardItem(time_format(item.time)) if self.time_fmt else QStandardItem(item.time)
+                print("___时间格式话___")
+                # time = QStandardItem(time_format(item.time)) if self.time_fmt else QStandardItem(item.time)
+                if self.time_fmt:
+                    print("___时间格式话___")
+                    time = QStandardItem(time_format(item.time))
+                else:
+                    print("___时间默认格式___")
+                    time = time_table_item(item)
                 self.model_share.appendRow([name, size, time])
 
     def show_share_url_file_lists(self, infos):
@@ -1052,7 +1079,10 @@ class MainWindow(Ui_MainWindow):
                 name = QStandardItem(set_file_icon(infos.name), infos.name)
                 name.setData(ShareItem(item=infos))
                 time = time_format(infos.time) if self.time_fmt else infos.time
-                self.model_share.appendRow([name, QStandardItem(infos.size), QStandardItem(time)])
+                print("show url dir")
+                # self.model_share.appendRow([name, QStandardItem(infos.size), QStandardItem(time)])
+                item = time_table_item(infos)
+                self.model_share.appendRow([name, QStandardItem(infos.size), item])
                 self.model_share.setHorizontalHeaderLabels(["文件名", "大小", "时间"])
             for r in range(self.model_share.rowCount()):  # 右对齐
                 self.model_share.item(r, 1).setTextAlignment(

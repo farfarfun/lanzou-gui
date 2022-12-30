@@ -227,8 +227,10 @@ class TableDelegate(QStyledItemDelegate):
 
 class MyStandardItem(QStandardItem):
     def __lt__(self, other):
-        if self.data(Qt.ItemDataRole.UserRole) and other.data(Qt.ItemDataRole.UserRole):
-            return self.data(Qt.ItemDataRole.UserRole) < other.data(Qt.ItemDataRole.UserRole)
+        data = self.data(Qt.ItemDataRole.UserRole)
+        other_data = other.data(Qt.ItemDataRole.UserRole)
+        if data and other_data:
+            return data < other_data
         else:  # 没有setData并设置UserRole，则使用默认的方式进行比较排序
             return self.text() < other.text()
 

@@ -100,9 +100,7 @@ reg_number = re.compile("\d+")
 
 def time_stamp(time_str: str) -> Union[Union[datetime, timedelta, str], Any]:
     """输出格式化时间 %Y-%m-%d"""
-    print("time stamp", time_str)
     numbers = reg_number.findall(time_str)
-    print(numbers)
     date = datetime.today()
     if '秒前' in time_str:
         date = (date - timedelta(seconds=int(numbers[0])))

@@ -1022,14 +1022,37 @@ class LanZouCloud(object):
             logger.error(f'File direct url info: {info}')
             return info.code
 
-        resp = self._head(info.durl, stream=True)
-        print("down_file_by_url len", len(resp.text), info.durl)
+        resp = self._head(info.durl)
+        print("down_file_by_url ", info.durl)
         if not resp:
             task.info = LanZouCloud.NETWORK_ERROR
             return LanZouCloud.NETWORK_ERROR
 
         content_length = resp.headers.get('Content-Length', None)
         print("down_file_by_url Content-Length:", content_length)
+
+        # 对于 txt 文件, 可能出现没有 Content-Length 的情况
+        # 此时文件需要下载一次才会出现 Content-Length
+        # 这时候我们先读取一点数据, 再尝试获取一次, 通常只需读取 1 字节数据
+        if not content_length:
+            resp = self._get(info.durl, stream=True)
+            data_iter = resp.iter_content(chunk_size=1)
+            max_retries = 5  # 5 次拿不到就算了
+            while not content_length and max_retries > 0:
+                max_retries -= 1
+                logger.warning("Not found Content-Length in response headers")
+                logger.debug("Read 1 byte from stream...")
+                try:
+                    next(data_iter)  # 读取一个字节
+                except StopIteration:
+                    logger.debug("Please wait for a moment before downloading")
+                    return LanZouCloud.FAILED
+                resp_ = self._get(info.durl, stream=True)  # 再请求一次试试
+                if not resp_:
+                    return LanZouCloud.FAILED
+                content_length = resp_.headers.get('Content-Length', None)
+                logger.debug(f"Content-Length: {content_length}")
+            print("down_file_by_url again Content-Length:", content_length)
 
         total_size = int(content_length)
 

@@ -4,7 +4,7 @@ from lanzou.debug import logger
 
 
 class ListRefresher(QThread):
-    '''跟新目录文件与文件夹列表线程'''
+    """跟新目录文件与文件夹列表线程"""
     infos = pyqtSignal(object)
     err_msg = pyqtSignal(str, int)
 

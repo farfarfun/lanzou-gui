@@ -89,7 +89,8 @@ class LanZouCloud(object):
         self._max_size = 100  # 单个文件大小上限 MB
         self._upload_delay = (0, 0)  # 文件上传延时
         self._host_url = 'https://pan.lanzoub.com'
-        self._doupload_url = 'https://pc.woozooo.com/doupload.php'
+        # 2023/01/01网盘信息新增uid校验
+        self._doupload_url = 'https://pc.woozooo.com/doupload.php?uid='
         self._account_url = 'https://pc.woozooo.com/account.php'
         self._mydisk_url = 'https://pc.woozooo.com/mydisk.php'
         self._cookies = None
@@ -203,6 +204,8 @@ class LanZouCloud(object):
 
     def login_by_cookie(self, cookie: dict) -> int:
         """通过cookie登录"""
+        print("cookie",  cookie["ylogin"])
+
         self._session.cookies.update(cookie)
         html = self._get(self._account_url)
         if not html:
@@ -219,7 +222,7 @@ class LanZouCloud(object):
     def delete(self, fid, is_file=True) -> int:
         """把网盘的文件、无子文件夹的文件夹放到回收站"""
         post_data = {'task': 6, 'file_id': fid} if is_file else {'task': 3, 'folder_id': fid}
-        result = self._post(self._doupload_url, post_data)
+        result = self._post(self.doupload_url, post_data)
         if not result:
             return LanZouCloud.NETWORK_ERROR
         return LanZouCloud.SUCCESS if result.json()['zt'] == 1 else LanZouCloud.FAILED
@@ -420,7 +423,7 @@ class LanZouCloud(object):
         file_list = FileList()
         while True:
             post_data = {'task': 5, 'folder_id': folder_id, 'pg': page}
-            resp = self._post(self._doupload_url, post_data)
+            resp = self._post(self.doupload_url, post_data)
             if not resp:  # 网络异常，重试
                 continue
             else:
@@ -451,7 +454,7 @@ class LanZouCloud(object):
         folder_list = FolderList()
         path_list = FolderList()
         post_data = {'task': 47, 'folder_id': folder_id}
-        resp = self._post(self._doupload_url, post_data)
+        resp = self._post(self.doupload_url, post_data)
         if resp:
             resp = resp.json()
             for folder in resp["text"]:
@@ -475,6 +478,11 @@ class LanZouCloud(object):
                     now=int(folder['now'])
                 ))
         return folder_list, path_list
+
+    @property
+    def doupload_url(self):
+        return self._doupload_url + \
+               (self._session.cookies["ylogin"] if "ylogin" in self._session.cookies else "")
 
     def clean_ghost_folders(self):
         """清除网盘中的幽灵文件夹"""
@@ -504,7 +512,7 @@ class LanZouCloud(object):
         path_list = FolderList()
         path_list.append(FolderId('LanZouCloud', -1))
         post_data = {'task': 47, 'folder_id': folder_id}
-        resp = self._post(self._doupload_url, post_data)
+        resp = self._post(self.doupload_url, post_data)
         if not resp:
             return path_list
         for folder in resp.json()['info']:
@@ -654,7 +662,7 @@ class LanZouCloud(object):
     def get_share_info(self, fid, is_file=True) -> ShareInfo:
         """获取文件(夹)提取码、分享链接"""
         post_data = {'task': 22, 'file_id': fid} if is_file else {'task': 18, 'folder_id': fid}  # 获取分享链接和密码用
-        f_info = self._post(self._doupload_url, post_data)
+        f_info = self._post(self.doupload_url, post_data)
         if not f_info:
             return ShareInfo(LanZouCloud.NETWORK_ERROR)
         else:
@@ -669,7 +677,7 @@ class LanZouCloud(object):
         pwd = f_info['pwd'] if int(f_info['onof']) == 1 else ''
         if 'f_id' in f_info.keys():  # 说明返回的是文件的信息
             url = f_info['is_newd'] + '/' + f_info['f_id']  # 文件的分享链接需要拼凑
-            file_info = self._post(self._doupload_url, {'task': 12, 'file_id': fid})  # 文件信息
+            file_info = self._post(self.doupload_url, {'task': 12, 'file_id': fid})  # 文件信息
             if not file_info:
                 return ShareInfo(LanZouCloud.NETWORK_ERROR)
             name = file_info.json()['text']  # 无后缀的文件名(获得后缀又要发送请求,没有就没有吧,尽可能减少请求数量)
@@ -691,7 +699,7 @@ class LanZouCloud(object):
             post_data = {"task": 23, "file_id": fid, "shows": passwd_status, "shownames": passwd}
         else:
             post_data = {"task": 16, "folder_id": fid, "shows": passwd_status, "shownames": passwd}
-        result = self._post(self._doupload_url, post_data)
+        result = self._post(self.doupload_url, post_data)
         if not result:
             return LanZouCloud.NETWORK_ERROR
         return LanZouCloud.SUCCESS if result.json()['zt'] == 1 else LanZouCloud.FAILED
@@ -706,7 +714,7 @@ class LanZouCloud(object):
         raw_folders = self.get_move_folders()
         post_data = {"task": 2, "parent_id": parent_id or -1, "folder_name": folder_name,
                      "folder_description": desc}
-        result = self._post(self._doupload_url, post_data)  # 创建文件夹
+        result = self._post(self.doupload_url, post_data)  # 创建文件夹
         if not result or result.json()['zt'] != 1:
             logger.debug(f"Mkdir {folder_name} error, parent_id={parent_id}")
             return LanZouCloud.MKDIR_ERROR  # 正常时返回 id 也是 int，为了方便判断是否成功，网络异常或者创建失败都返回相同错误码
@@ -723,7 +731,7 @@ class LanZouCloud(object):
         # 不能用于重命名文件，id 无效仍然返回成功
         folder_name = name_format(folder_name)
         post_data = {'task': 4, 'folder_id': folder_id, 'folder_name': folder_name, 'folder_description': desc}
-        result = self._post(self._doupload_url, post_data)
+        result = self._post(self.doupload_url, post_data)
         if not result:
             return LanZouCloud.NETWORK_ERROR
         return LanZouCloud.SUCCESS if result.json()['zt'] == 1 else LanZouCloud.FAILED
@@ -741,7 +749,7 @@ class LanZouCloud(object):
         if is_file:
             # 文件描述一旦设置了值，就不能再设置为空
             post_data = {'task': 11, 'file_id': fid, 'desc': desc}
-            result = self._post(self._doupload_url, post_data)
+            result = self._post(self.doupload_url, post_data)
             if not result:
                 return LanZouCloud.NETWORK_ERROR
             elif result.json()['zt'] != 1:
@@ -757,7 +765,7 @@ class LanZouCloud(object):
     def rename_file(self, file_id, filename):
         """允许会员重命名文件(无法修后缀名)"""
         post_data = {'task': 46, 'file_id': file_id, 'file_name': name_format(filename), 'type': 2}
-        result = self._post(self._doupload_url, post_data)
+        result = self._post(self.doupload_url, post_data)
         if not result:
             return LanZouCloud.NETWORK_ERROR
         return LanZouCloud.SUCCESS if result.json()['zt'] == 1 else LanZouCloud.FAILED
@@ -767,7 +775,7 @@ class LanZouCloud(object):
         # 这里 file_id 可以为任意值,不会对结果产生影响
         result = FolderList()
         result.append(FolderId(name='LanZouCloud', id=-1, desc="", now=0))
-        resp = self._post(self._doupload_url, data={"task": 19, "file_id": -1})
+        resp = self._post(self.doupload_url, data={"task": 19, "file_id": -1})
         if not resp or resp.json()['zt'] != 1:  # 获取失败或者网络异常
             return result
         info = resp.json()['info'] or []  # 新注册用户无数据, info=None
@@ -782,7 +790,7 @@ class LanZouCloud(object):
         root = FolderList()
         root.append(FolderId('LanZouCloud', -1))
         result.append(root)
-        resp = self._post(self._doupload_url, data={"task": 19, "file_id": -1})
+        resp = self._post(self.doupload_url, data={"task": 19, "file_id": -1})
         if not resp or resp.json()['zt'] != 1:  # 获取失败或者网络异常
             return result
 
@@ -796,7 +804,7 @@ class LanZouCloud(object):
         """移动文件到指定文件夹"""
         # 移动回收站文件也返回成功(实际上行不通) (+_+)?
         post_data = {'task': 20, 'file_id': file_id, 'folder_id': folder_id}
-        result = self._post(self._doupload_url, post_data)
+        result = self._post(self.doupload_url, post_data)
         logger.debug(f"Move file file_id={file_id} to folder_id={folder_id}")
         if not result:
             return LanZouCloud.NETWORK_ERROR

@@ -13,10 +13,10 @@ class AboutDialog(QDialog):
     def __init__(self, parent=None):
         super(AboutDialog, self).__init__(parent)
         self._ver = ''
-        self._github = 'https://github.com/rachpt/lanzou-gui'
+        self._github = 'https://github.com/Leon406/lanzou-gui'
         self._api_url = 'https://github.com/zaxtyson/LanZouCloud-API'
-        self._gitee = 'https://gitee.com/rachpt/lanzou-gui'
-        self._home_page = 'https://rachpt.cn/lanzou-gui/'
+        self._gitee = 'https://gitee.com/LeonShih/lanzou-gui'
+        self._home_page = 'https://github.com/Leon406/lanzou-gui'
         self.initUI()
         self.setStyleSheet(others_style)
 
@@ -61,7 +61,9 @@ Python 依赖见<a href="{self._github}/blob/master/requirements.txt">requiremen
         self.lb_about_text.setText(about)
         self.lb_about_text.setOpenExternalLinks(True)
         self.lb_author = QLabel("作者")  # author
-        self.lb_author_mail = QLabel("<a href='mailto:rachpt@126.com'>rachpt</a>")
+        self.lb_author_mail = QLabel(" <a href='mailto:deadogone@gmail.com'>leon406</a>, "
+                                     "<a href='mailto:rachpt@126.com'>rachpt</a>"
+                                     )
         self.lb_author_mail.setOpenExternalLinks(True)
         self.lb_update = QLabel("项目")  # 更新
         self.lb_update_url = QLabel(project_url)
@@ -72,9 +74,6 @@ Python 依赖见<a href="{self._github}/blob/master/requirements.txt">requiremen
         self.buttonBox.button(QDialogButtonBox.StandardButton.Close).setText("关闭")
         self.buttonBox.rejected.connect(self.reject)
         self.buttonBox.setStyleSheet(btn_style)
-
-        self.recommend = QLabel("<br />大文件推荐使用 <a href='https://github.com/Aruelius/cloud189'>cloud189-cli</a>")
-        self.recommend.setOpenExternalLinks(True)
 
         self.line = QLine(QPoint(), QPoint(550, 0))
         self.lb_line = QLabel('<html><hr /></html>')
@@ -95,7 +94,6 @@ Python 依赖见<a href="{self._github}/blob/master/requirements.txt">requiremen
         self.form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)  # 覆盖MacOS的默认样式
         vbox.addLayout(self.form)
         vbox.addStretch(1)
-        vbox.addWidget(self.recommend)
         vbox.addWidget(self.lb_line)
 
         self.setLayout(vbox)

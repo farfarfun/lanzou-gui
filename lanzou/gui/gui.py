@@ -679,7 +679,6 @@ class MainWindow(Ui_MainWindow):
                     open_file(task)
                     return
 
-
     def call_rename_mkdir_worker(self, infos):
         """重命名、修改简介与新建文件夹"""
         self.rename_mkdir_worker.set_values(infos, self._work_id, self._folder_list)
@@ -1034,11 +1033,8 @@ class MainWindow(Ui_MainWindow):
                     name.setData(set_data)
                     name.setText(pre_root_dir + sub_folder.folder.name + text)
                     if self.time_fmt:
-                        print("___时间格式话___111")
                         time = QStandardItem(time_format(sub_folder.folder.time))
                     else:
-                        print("___时间默认格式___11")
-                        # time = QStandardItem(sub_folder.folder.time)
                         time = time_table_item(sub_folder.folder)
 
                     size = QStandardItem(sub_folder.folder.size)
@@ -1061,13 +1057,10 @@ class MainWindow(Ui_MainWindow):
                 name.setText(pre_root_dir + item.name)
                 size = QStandardItem(item.size)
                 size.setData(format_size_int(item.size), Qt.ItemDataRole.UserRole)
-                print("___时间格式话___")
                 # time = QStandardItem(time_format(item.time)) if self.time_fmt else QStandardItem(item.time)
                 if self.time_fmt:
-                    print("___时间格式话___")
                     time = QStandardItem(time_format(item.time))
                 else:
-                    print("___时间默认格式___")
                     time = time_table_item(item)
                 self.model_share.appendRow([name, size, time])
 

@@ -467,7 +467,7 @@ class LanZouCloud(object):
                     desc=folder['folder_des'][1:-1]
                 ))
             if folder_id == -1 or resp["info"]:  # 如果 folder_id 有误，就返回空 list
-                path_list.append(FolderId('LanZouCloud', -1, '根目录', -1))
+                path_list.append(FolderId('根目录', -1, '根目录', -1))
             for folder in resp["info"]:
                 if "folderid" not in folder:
                     continue
@@ -510,7 +510,7 @@ class LanZouCloud(object):
     def get_full_path(self, folder_id=-1) -> FolderList:
         """获取文件夹完整路径"""
         path_list = FolderList()
-        path_list.append(FolderId('LanZouCloud', -1))
+        path_list.append(FolderId('根目录', -1))
         post_data = {'task': 47, 'folder_id': folder_id}
         resp = self._post(self.doupload_url, post_data)
         if not resp:
@@ -774,7 +774,7 @@ class LanZouCloud(object):
         """获取全部文件夹 id-name 列表，用于移动文件至新的文件夹"""
         # 这里 file_id 可以为任意值,不会对结果产生影响
         result = FolderList()
-        result.append(FolderId(name='LanZouCloud', id=-1, desc="", now=0))
+        result.append(FolderId(name='根目录', id=-1, desc="", now=0))
         resp = self._post(self.doupload_url, data={"task": 19, "file_id": -1})
         if not resp or resp.json()['zt'] != 1:  # 获取失败或者网络异常
             return result
@@ -788,7 +788,7 @@ class LanZouCloud(object):
         """获取所有文件夹的绝对路径(耗时长)"""
         result = []
         root = FolderList()
-        root.append(FolderId('LanZouCloud', -1))
+        root.append(FolderId('根目录', -1))
         result.append(root)
         resp = self._post(self.doupload_url, data={"task": 19, "file_id": -1})
         if not resp or resp.json()['zt'] != 1:  # 获取失败或者网络异常

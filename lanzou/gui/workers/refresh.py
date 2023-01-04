@@ -53,7 +53,7 @@ class ListRefresher(QThread):
             try:
                 if self.r_files:
                     # [i.id, i.name, i.size, i.time, i.downs, i.has_pwd, i.has_des]
-                    info = {i.name: i for i in self._disk.get_file_list(self._fid)}
+                    info = {i.id: i for i in self._disk.get_file_list(self._fid)}
                     emit_infos['file_list'] = {key: info.get(key) for key in sorted(info.keys())}  # {name-File}
                 if self.r_folders:
                     folders, full_path = self._disk.get_dir_list(self._fid)

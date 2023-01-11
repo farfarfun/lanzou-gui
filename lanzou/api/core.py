@@ -853,7 +853,9 @@ class LanZouCloud(object):
         file = open(file_path, 'rb')
         post_data = {
             "task": "1",
-            "folder_id": str(folder_id),
+            "vie": "2",
+            "ve": "2",
+            "folder_id_bb_n": str(folder_id),
             "id": "WU_FILE_0",
             "name": filename,
             "upload_file": (filename, file, 'application/octet-stream')
@@ -879,7 +881,7 @@ class LanZouCloud(object):
                     self._upload_finished_flag = True
 
         monitor = MultipartEncoderMonitor(post_data, _call_back)
-        result = self._post('https://pc.woozooo.com/fileup.php', monitor, headers=tmp_header, timeout=None)
+        result = self._post('https://pc.woozooo.com/html5up.php', monitor, headers=tmp_header, timeout=None)
         if not result:  # 网络异常
             logger.debug('Upload file no result')
             file.close()

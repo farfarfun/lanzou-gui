@@ -579,6 +579,46 @@ class Extreme360(ChromiumBased):
                          **args)
 
 
+class Se360Browser(ChromiumBased):
+    """Class for QQBrowser"""
+
+    def __init__(self, cookie_file=None, domain_name="", key_file=None):
+        args = {
+            'windows_cookies': [
+                {'env': 'LOCALAPPDATA', 'path': 'secoresdk\\360se6\\User Data\\Default\\Network\\Cookies'},
+                {'env': 'APPDATA', 'path': 'secoresdk\\360se6\\User Data\\Default\\Network\\Cookies'},
+                {'env': 'CUSTOM_BROWSER_DIR', 'path': 'secoresdk\\360se6\\User Data\\Default\\Network\\Cookies'},
+            ],
+            'windows_keys': [
+                {'env': 'LOCALAPPDATA', 'path': 'secoresdk\\360se6\\User Data\\Local State'},
+                {'env': 'APPDATA', 'path': 'secoresdk\\360se6\\User Data\\Local State'},
+                {'env': 'CUSTOM_BROWSER_DIR', 'path': 'secoresdk\\360se6\\User Data\\Local State'}
+            ],
+        }
+        super().__init__(browser='Se360', cookie_file=cookie_file, domain_name=domain_name, key_file=key_file,
+                         **args)
+
+
+class SougouBrowser(ChromiumBased):
+    """Class for QQBrowser"""
+
+    def __init__(self, cookie_file=None, domain_name="", key_file=None):
+        args = {
+            'windows_cookies': [
+                {'env': 'LOCALAPPDATA', 'path': 'SogouExplorer\\Webkit\\Default\\Cookies'},
+                {'env': 'APPDATA', 'path': 'SogouExplorer\\Webkit\\Default\\Cookies'},
+                {'env': 'CUSTOM_BROWSER_DIR', 'path': 'SogouExplorer\\Webkit\\Default\\Cookies'},
+            ],
+            'windows_keys': [
+                {'env': 'LOCALAPPDATA', 'path': 'SogouExplorer\\Webkit\\Local State'},
+                {'env': 'APPDATA', 'path': 'SogouExplorer\\Webkit\\Local State'},
+                {'env': 'CUSTOM_BROWSER_DIR', 'path': 'SogouExplorer\\Webkit\\Local State'},
+            ],
+        }
+        super().__init__(browser='sougou', cookie_file=cookie_file, domain_name=domain_name, key_file=key_file,
+                         **args)
+
+
 class QQBrowser(ChromiumBased):
     """Class for QQBrowser"""
 
@@ -895,6 +935,20 @@ def extreme360(cookie_file=None, domain_name="", key_file=None):
     return Extreme360(cookie_file, domain_name, key_file).load()
 
 
+def se360(cookie_file=None, domain_name="", key_file=None):
+    """Returns a cookiejar of the cookies used by Chrome. Optionally pass in a
+    domain name to only load cookies from the specified domain
+    """
+    return Se360Browser(cookie_file, domain_name, key_file).load()
+
+
+def sougou(cookie_file=None, domain_name="", key_file=None):
+    """Returns a cookiejar of the cookies used by Chrome. Optionally pass in a
+    domain name to only load cookies from the specified domain
+    """
+    return SougouBrowser(cookie_file, domain_name, key_file).load()
+
+
 def qqbrowser(cookie_file=None, domain_name="", key_file=None):
     """Returns a cookiejar of the cookies used by Chrome. Optionally pass in a
     domain name to only load cookies from the specified domain
@@ -960,6 +1014,8 @@ def load(domain_name=""):
         chrome,
         chromium,
         extreme360,
+        se360,
+        sougou,
         qqbrowser,
         opera,
         brave,
@@ -981,5 +1037,6 @@ if __name__ == '__main__':
 
 
     # print(qqbrowser(domain_name="qq.com"))
-    print(extreme360(domain_name="pc.woozooo.com"))
+    # print(se360(domain_name="pc.woozooo.com"))
+    print(sougou(domain_name="pc.woozooo.com"))
     # print(cookie_jar)

@@ -396,7 +396,8 @@ class LoginDialog(QDialog):
                 QTimer.singleShot(2000, self._close_dialog)
             else:
                 self.auto_get_cookie_ok.setPlainText(
-                    "❌获取失败\n请提前使用支持的浏览器登录蓝奏云，读取前完全退出浏览器！\n支持的浏览器与顺序：\nchrome, chromium, opera, edge, firefox")
+                    "❌获取失败\n请提前使用支持的浏览器登录蓝奏云，读取前完全退出浏览器！\n支持的浏览器与顺序：\nchrome, chromium,360极速,"
+                    "\n360安全,搜狗,qq opera, edge, firefox")
 
     def _close_dialog(self):
         """关闭对话框"""

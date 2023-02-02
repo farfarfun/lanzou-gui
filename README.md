@@ -57,6 +57,11 @@ python >= 3.6。
 
 本项目的目的旨在学习 `PyQt6` 在开发桌面程序方面的应用，如需进行其他目的使用，请遵照许可协议 Fork，使用本软件所造成的一切后果与本人无关。
 
+# 支持作者
+
+- star
+- [赞赏](https://afdian.net/a/leon406)
+
 # 致谢
 
 [zaxtyson/LanZouCloud-API](https://github.com/zaxtyson/LanZouCloud-API)

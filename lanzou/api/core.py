@@ -1441,9 +1441,9 @@ if __name__ == "__main__":
     # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0dazruwd",
     #                                            "1111")
     # print(fileDetail)
-    # fileDetail = lanzou.get_folder_info_by_url("https://www.lanzoub.com/b0229kmne",
-    #                                            "xpz")
-    # print(fileDetail)
+    fileDetail = lanzou.get_folder_info_by_url("https://www.lanzoub.com/b0229kmne",
+                                               "xpz")
+    print(fileDetail)
 
     # 文件解析
     # 无密码文件

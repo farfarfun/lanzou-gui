@@ -2,7 +2,12 @@ PyQt6
 # PyQtWebEngine  # 可能需要装 spyder 解决 PyQtWebEngine 版本冲突
 requests
 requests_toolbelt
-browser_cookie3
+
+# browser_cookie3
+pycryptodomex
+lz4
+SecretStorage
+keyring
 
 # browser_cookie3 requires
 # pyaes

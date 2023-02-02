@@ -40,7 +40,7 @@ def parse_sign(html: str) -> str:
             re.search(r"sign=(\w+?)&", html)).group(1)
     if len(sign) < 20:  # 此时 sign 保存在变量里面, 变量名是 sign 匹配的字符
         sign = re.search(rf"var {sign}\s*=\s*'(.+?)';", html).group(1)
-    return sign
+    return sign.replace("'", "")
 
 
 def parse_form_hash(html: str) -> str:

@@ -578,22 +578,22 @@ class LanZouCloud(object):
             f_desc = parse_desc(first_page)
 
             first_page = self._get(self._host_url + para)
-            logger.info(f"get_file_info_by_url else first_page={first_page.text}")
+            logger.error(f"get_file_info_by_url else frame_page={first_page.text}")
             if not first_page:
                 return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time,
                                   size=f_size, desc=f_desc, pwd=pwd, url=share_url)
             first_page = remove_notes(first_page.text)
             sign = parse_sign(first_page)
 
-            logger.error(f"无密码 sign:{sign}")
+            logger.error(f"无密码 sign:{sign} shareUrl: {share_url}")
             post_data = {'action': 'downprocess', 'sign': sign, 'ves': 1}
             # 某些特殊情况 share_url 会出现 webpage 参数, post_data 需要更多参数
             # https://github.com/zaxtyson/LanZouCloud-API/issues/74
             if "?webpage=" in share_url:
                 try:
                     ajax_data = re.search(r"var ajaxdata\s*=\s*'(.+?)';", first_page).group(1)
-                    web_sign = re.search(r"var awebsigna\s*=\s*'(.+?)';", first_page).group(1)
-                    web_sign_key = re.search(r"var cwebsignkeyc\s*=\s*'(.+?)';", first_page).group(1)
+                    web_sign = re.search(r"var ws_sign\s*=\s*'(.+?)';", first_page).group(1)
+                    web_sign_key = re.search(r"var wsk_sign\s*=\s*'(.+?)';", first_page).group(1)
                     post_data = {'action': 'downprocess', 'signs': ajax_data, 'sign': sign, 'ves': 1,
                                  'websign': web_sign, 'websignkey': web_sign_key}
                 except AttributeError as e:  # 正则匹配失败
@@ -605,7 +605,7 @@ class LanZouCloud(object):
                 return FileDetail(LanZouCloud.NETWORK_ERROR, name=f_name, time=f_time, size=f_size, desc=f_desc,
                                   pwd=pwd, url=share_url)
             link_info = link_info.json()
-
+            logger.info(f"get_file_info_by_url=== link_info{link_info}")
         # 这里开始获取文件直链
         if link_info['zt'] != 1:  # 返回信息异常，无法获取直链
             return FileDetail(LanZouCloud.FAILED,
@@ -623,6 +623,7 @@ class LanZouCloud(object):
         if '网络异常' not in download_page_html:  # 没有遇到验证码
             direct_url = download_page.headers['Location']  # 重定向后的真直链
         else:  # 遇到验证码，验证后才能获取下载直链
+            logger.info(f"get_file_info_by_url=== 验证码 {download_page_html}")
             file_token = re.findall("'file':'(.+?)'", download_page_html)[0]
             file_sign = re.findall("'sign':'(.+?)'", download_page_html)[0]
             check_api = 'https://vip.d0.baidupan.com/file/ajax.php'
@@ -1440,15 +1441,20 @@ if __name__ == "__main__":
     # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0dazruwd",
     #                                            "1111")
     # print(fileDetail)
+    # fileDetail = lanzou.get_folder_info_by_url("https://www.lanzoub.com/b0229kmne",
+    #                                            "xpz")
+    # print(fileDetail)
 
     # 文件解析
     # 无密码文件
-    fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
-    print(fileDetail)
-    fileDetail = lanzou.get_share_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
-    print(fileDetail)
-    # 有密码文件
-    fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/ij31g0jiqieb", "6666")
-    print(fileDetail)
-    fileDetail = lanzou.get_share_info_by_url("https://leon.lanzoub.com/ij31g0jiqieb", "6666")
+    # fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
+    # print(fileDetail)
+    # fileDetail = lanzou.get_share_info_by_url("https://leon.lanzoub.com/iJV1f01ns1sh")
+    # print(fileDetail)
+    # # 有密码文件
+    # fileDetail = lanzou.get_file_info_by_url("https://leon.lanzoub.com/ij31g0jiqieb", "6666")
+    # print(fileDetail)
+    # fileDetail = lanzou.get_share_info_by_url("https://leon.lanzoub.com/ij31g0jiqieb", "6666")
+    # print(fileDetail)
+    fileDetail = lanzou.get_file_info_by_url("https://pan.lanzoub.com/iknzE0maodid?webpage=V2ZaOwljAmMIbVA2UzVdbARmATUAI1dsAD5SYlA4BDZVYVI9D2EHL1M0")
     print(fileDetail)

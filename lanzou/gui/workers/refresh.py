@@ -65,7 +65,7 @@ class ListRefresher(QThread):
                         self._mutex.unlock()
                         return self.goto_root_dir()
                     info = {i.name: i for i in folders}
-                    emit_infos['folder_list'] = {key: info.get(key) for key in sorted(info.keys(), reverse=True)}
+                    emit_infos['folder_list'] = {key: info.get(key) for key in sorted(info.keys())}
                     emit_infos['path_list'] = full_path
             except TimeoutError:
                 self.err_msg.emit("网络超时，无法更新目录，稍后再试！", 7000)

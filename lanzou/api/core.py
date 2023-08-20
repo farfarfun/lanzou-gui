@@ -204,7 +204,7 @@ class LanZouCloud(object):
 
     def login_by_cookie(self, cookie: dict) -> int:
         """通过cookie登录"""
-        print("cookie",  cookie["ylogin"])
+        print("cookie", cookie["ylogin"])
 
         self._session.cookies.update(cookie)
         html = self._get(self._account_url)
@@ -482,7 +482,7 @@ class LanZouCloud(object):
     @property
     def doupload_url(self):
         return self._doupload_url + \
-               (self._session.cookies["ylogin"] if "ylogin" in self._session.cookies else "")
+            (self._session.cookies["ylogin"] if "ylogin" in self._session.cookies else "")
 
     def clean_ghost_folders(self):
         """清除网盘中的幽灵文件夹"""
@@ -1441,8 +1441,8 @@ if __name__ == "__main__":
     # fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0dazruwd",
     #                                            "1111")
     # print(fileDetail)
-    fileDetail = lanzou.get_folder_info_by_url("https://www.lanzoub.com/b0229kmne",
-                                               "xpz")
+    fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8h93hi",
+                                               "")
     print(fileDetail)
 
     # 文件解析
@@ -1456,5 +1456,6 @@ if __name__ == "__main__":
     # print(fileDetail)
     # fileDetail = lanzou.get_share_info_by_url("https://leon.lanzoub.com/ij31g0jiqieb", "6666")
     # print(fileDetail)
-    fileDetail = lanzou.get_file_info_by_url("https://pan.lanzoub.com/iknzE0maodid?webpage=V2ZaOwljAmMIbVA2UzVdbARmATUAI1dsAD5SYlA4BDZVYVI9D2EHL1M0")
+    fileDetail = lanzou.get_file_info_by_url(
+        "https://leon.lanzoub.com/iqOuv14z74pc")
     print(fileDetail)

@@ -114,7 +114,7 @@ class AutoResizingTextEdit(QTextEdit):
     def setMinimumLines(self, num_lines):
         """ Sets minimum widget height to a value corresponding to specified number of lines
             in the default font. """
-
+        pass
         self.setMinimumSize(self.minimumSize().width(), self.lineCountToWidgetHeight(num_lines))
 
     def heightForWidth(self, width):
@@ -162,7 +162,7 @@ class AutoResizingTextEdit(QTextEdit):
         font_metrics = QFontMetrics(self.document().defaultFont())
 
         # font_metrics.lineSpacing() is ignored because it seems to be already included in font_metrics.height()
-        return (
+        return int(
                 widget_margins.top() +
                 document_margin +
                 max(num_lines, 1) * font_metrics.height() +

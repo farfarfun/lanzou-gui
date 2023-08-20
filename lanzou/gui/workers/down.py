@@ -63,7 +63,6 @@ class Downloader(QThread):
             self._task.info = f"未知错误！err={err}"
             logger.error(f"Download error: err={err}")
             self.failed.emit()
-        except UserWarning:
-            pass
+
         self._task.run = False
         self.finished_.emit(self._task)

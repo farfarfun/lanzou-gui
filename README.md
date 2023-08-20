@@ -51,7 +51,7 @@ Arch Linux [AUR](https://aur.archlinux.org/packages/lanzou-gui/)
 yay -S lanzou-gui
 ```
 
-python >= 3.6。
+## 3.6 ≤ python ≤ 3.9
 
 [Gitee 镜像 repo](https://gitee.com/rachpt/lanzou-gui)，[命令行版本](https://github.com/zaxtyson/LanZouCloud-CMD)。
 

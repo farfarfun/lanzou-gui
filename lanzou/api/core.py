@@ -637,6 +637,8 @@ class LanZouCloud(object):
                                   desc=f_desc, pwd=pwd, url=share_url)
 
         f_type = f_name.split('.')[-1]
+        # 解决返回为空
+        time.sleep(1)
         return FileDetail(LanZouCloud.SUCCESS,
                           name=f_name, size=f_size, type=f_type, time=f_time,
                           desc=f_desc, pwd=pwd, url=share_url, durl=direct_url)
@@ -1443,7 +1445,7 @@ if __name__ == "__main__":
     # print(fileDetail)
     fileDetail = lanzou.get_folder_info_by_url("https://leon.lanzoub.com/b0d8h93hi",
                                                "")
-    print(fileDetail)
+    # print(fileDetail)
 
     # 文件解析
     # 无密码文件
@@ -1456,6 +1458,8 @@ if __name__ == "__main__":
     # print(fileDetail)
     # fileDetail = lanzou.get_share_info_by_url("https://leon.lanzoub.com/ij31g0jiqieb", "6666")
     # print(fileDetail)
+    # fileDetail = lanzou.get_file_info_by_url(
+    #     "https://leon.lanzoub.com/iqOuv14z74pc")
     fileDetail = lanzou.get_file_info_by_url(
-        "https://leon.lanzoub.com/iqOuv14z74pc")
+        "https://leon.lanzoub.com/ij31g0jiqieb","6666")
     print(fileDetail)

@@ -36,12 +36,16 @@ def parse_desc(html: str) -> str:
 
 
 def parse_sign(html: str) -> str:
-    # 一般情况 sign 的值就在 data 里，有时放在变量后面
-    sign = (re.search(r"'sign':(.+?),", html) or
-            re.search(r"'sign'\s*:\s*'(.+?)'", html) or
-            re.search(r"sign=(\w+?)&", html)).group(1)
+    # sign 放在变量后面前后各有一个干扰项
+    sign = re.findall(r"'sign':(.+?),", html)
+    logger.error("~~~~~~~~~~ first  " + "  ".join(sign))
+    sign = sign[1]
     if len(sign) < 20:  # 此时 sign 保存在变量里面, 变量名是 sign 匹配的字符
-        sign = re.findall(r"var sasign\s*=\s*'(.{10,}?)';", html)[-1]
+        sign = (
+                re.findall(r"var sasign\s*=\s*'(.{10,}?)';", html)
+                or re.findall(r"var skdklds\s*=\s*'(.{10,}?)';", html)
+                or re.findall(rf"var {sign}\s*=\s*'(.+?)';", html)
+                )[-1]
     logger.error("~~~~~~~~~~ final  " + sign)
     return sign.replace("'", "")
 

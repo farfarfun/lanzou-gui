@@ -583,7 +583,6 @@ class MainWindow(Ui_MainWindow):
             name.setToolTip(tips)
             size = QStandardItem(infos.size)
             size.setData(format_size_int(infos.size), Qt.ItemDataRole.UserRole)  # 配合MyStandardItem实现正确排序
-            print("show_file_and_folder_lists dir")
             self.model_disk.appendRow([name, size, time_table_item(infos)])
         for row in range(self.model_disk.rowCount()):  # 右对齐
             self.model_disk.item(row, 1).setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)

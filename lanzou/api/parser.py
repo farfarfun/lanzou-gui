@@ -39,13 +39,16 @@ def parse_sign(html: str) -> str:
     # sign 放在变量后面前后各有一个干扰项
     sign = re.findall(r"'sign':(.+?),", html)
     logger.error("~~~~~~~~~~ first  " + "  ".join(sign))
-    sign = sign[1]
+    if len(sign) > 1:
+        sign = sign[1]
+    else:
+        sign = sign[0]
     if len(sign) < 20:  # 此时 sign 保存在变量里面, 变量名是 sign 匹配的字符
         sign = (
                 re.findall(r"var sasign\s*=\s*'(.{10,}?)';", html)
                 or re.findall(r"var skdklds\s*=\s*'(.{10,}?)';", html)
                 or re.findall(rf"var {sign}\s*=\s*'(.+?)';", html)
-                )[-1]
+        )[-1]
     logger.error("~~~~~~~~~~ final  " + sign)
     return sign.replace("'", "")
 

@@ -28,6 +28,7 @@ class InfoDialog(QDialog):
             self.lb_name.setText("文件名：")
             self.lb_desc.setText("文件描述：")
             self.tx_dl_link.setText("")  # 清空旧的信息
+            self.tx_short.setText("")  # 清空旧的信息
             self.lb_dl_link.setVisible(True)
             self.tx_dl_link.setVisible(True)
         else:
@@ -96,13 +97,15 @@ class InfoDialog(QDialog):
         if self._short_link_flag:
             self._short_link_flag = False
             self.tx_short.setPlaceholderText("后台获取中，请稍候！")
-            url = self.tx_share_url.text()
+            url = self.tx_dl_link.toPlainText()
+            if not url:
+                url = self.tx_share_url.text()
+            print(url)
             from lanzou.api.extra import get_short_url
-
             short_url = get_short_url(url)
             if short_url:
                 self.tx_short.setText(short_url)
-                self.tx_short.setPlaceholderText("")
+                self.tx_short.setPlaceholderText("单击获取")
                 self._short_link_flag = True
             else:
                 self.tx_short.setText("")

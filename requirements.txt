@@ -1,19 +1,10 @@
-PyQt6
+# PyQt6
 # PyQtWebEngine
-requests
-requests_toolbelt
+# requests
+# requests_toolbelt
 
 # browser_cookie3
-pycryptodomex
-lz4
-SecretStorage
-keyring
-
-# browser_cookie3 requires
-# pyaes
-# pbkdf2
-# keyring
+# pycryptodomex
 # lz4
-# pycryptodome
 # SecretStorage
-# linux： pip install secretstorage dbus-python
+# keyring
